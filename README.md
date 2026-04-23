@@ -1,25 +1,17 @@
 <div align="center">
-    <img src="assets/vika.png" alt="Vika" width="150" style="border-radius: 10px; border-width: 1px;">
+    <img src="assets/vika.png" alt="Vika" width="180" style="border-radius: 10px; border-width: 1px;">
     <h1>Vika</h1>
-    <h3><em>A Go framework to build AI assistants. One YAML, one binary, deploy anywhere.</em></h3>
+    <h3><em>Go framework for AI assistants that run where you need them.</em></h3>
     <p>
-    <img src="https://img.shields.io/github/contributors/snowztech/vika?style=plastic" alt="Contributors">
-    <img src="https://img.shields.io/github/forks/snowztech/vika" alt="Forks">
-    <img src="https://img.shields.io/github/stars/snowztech/vika" alt="Stars">
-    <img src="https://img.shields.io/github/issues/snowztech/vika" alt="Issues">
-    <img src="https://img.shields.io/github/repo-size/snowztech/vika" alt="Repository Size">
-    <a href="LICENSE">
-      <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License">
-    </a>
-    <a href="https://github.com/sponsors/lucasnevespereira">
-      <img src="https://img.shields.io/badge/Sponsor-GitHub-333333?style=flat&logo=github&logoColor=white" alt="Sponsor">
-    </a>
+    <a href="https://github.com/snowztech/vika/stargazers"><img src="https://img.shields.io/github/stars/snowztech/vika?style=flat&logo=github" alt="Stars"></a>
+    <a href="https://github.com/snowztech/vika/network/members"><img src="https://img.shields.io/github/forks/snowztech/vika?style=flat&logo=github" alt="Forks"></a>
+    <a href="https://github.com/snowztech/vika/issues"><img src="https://img.shields.io/github/issues/snowztech/vika?style=flat&logo=github" alt="Issues"></a>
+    <a href="https://github.com/snowztech/vika/graphs/contributors"><img src="https://img.shields.io/github/contributors/snowztech/vika?style=flat&logo=github" alt="Contributors"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=flat" alt="License"></a>
     </p>
 </div>
 
----
-
-An assistant has personality, tools, memory, and a transport. You define one in YAML, run it, and use it on Discord or Slack. Same binary, different YAMLs: a coding assistant, a support bot, a Discord mascot.
+One YAML defines the assistant: personality, tools, memory, and how it connects to users. Same binary, different YAML—a coding assistant, a support bot, a Discord mascot.
 
 Vika ships with a default assistant ready to use.
 
