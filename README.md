@@ -15,8 +15,6 @@ An assistant has personality, tools, memory, and a transport. Same binary,
 different YAMLs. One for a coding assistant, one for a support bot,
 one for a Discord mascot. Configure in YAML, run, done.
 
----
-
 ## Quickstart
 
 ```bash
@@ -41,10 +39,10 @@ vika run
 
 - [ARCHITECTURE.md](docs/ARCHITECTURE.md) — core concepts, interfaces, directory layout
 - [CHARACTER.md](docs/CHARACTER.md) — full YAML spec with examples
-- [ROADMAP.md](docs/ROADMAP.md) - where we're headed
+- [ROADMAP.md](docs/ROADMAP.md) — where we're headed
 
 ---
 
 ## License
 
-MIT
+[MIT](LICENSE) — Copyright (c) 2024 snowztech
