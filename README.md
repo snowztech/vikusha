@@ -2,14 +2,16 @@
   <img src="assets/vika.png" width="200" alt="Vika" />
 </p>
 
-# Vika
+<h1 align="center">Vika</h1>
 
-**A Go framework to build always-on AI assistants. One YAML, one binary, deploy anywhere.**
+<p align="center">
+  <i>A Go framework to build always-on AI assistants. One YAML, one binary, deploy anywhere.</i>
+</p>
+
+---
 
 You define an assistant in YAML, run it, and use it on Discord or Slack.
 Vika ships with a default assistant ready to use.
-
-## The idea
 
 An assistant has personality, tools, memory, and a transport. Same binary,
 different YAMLs. One for a coding assistant, one for a support bot,
@@ -45,4 +47,4 @@ vika run
 
 ## License
 
-[MIT](LICENSE) — Copyright (c) 2024 snowztech
+[MIT](LICENSE) — Copyright (c) 2026 snowztech
