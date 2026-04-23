@@ -1,120 +1,146 @@
 # Roadmap
 
-Vika's journey from prototype to production-ready framework.
+Priorities for the framework, grouped by what ships first.
 
-## Phase 1: Core Engine (v0.1)
+- **Now**: what blocks a usable v0.1.
+- **Next**: what turns the harness into a real framework.
+- **Later**: ideas to explore once the foundation is solid.
 
-**Goal:** Working agent harness with essential features.
+## Now (v0.1): the core harness
 
-- [ ] Agent loop with tool execution
-- [ ] File-based memory (markdown)
-- [ ] Basic tools: bash, file_read, file_edit, file_list
-- [ ] CLI transport (REPL)
-- [ ] Anthropic and OpenAI providers
-- [ ] Character YAML loading and validation
-- [ ] Token budgeting (30k history, 4k tool results)
-- [ ] Structured logging per turn
+A single agent you can talk to from the terminal, backed by a core harness that is fast, predictable, and easy to build on. Everything in Next depends on this being right.
 
-**Status:** Derived from existing nevinho code.
+### Agent loop
 
----
+- [ ] `agent.Chat(ctx, userID, msg)` as the single entry point.
+- [ ] Tool-call loop with a hard iteration cap.
+- [ ] Per-user serialization so one user's turn cannot interleave with itself.
+- [ ] Cancellation via context, surfaced through a per-user cancel handle.
+- [ ] Panic recovery around tool execution.
 
-## Phase 2: Transports (v0.2)
+### Providers
 
-**Goal:** Connect agents to popular chat platforms.
+- [ ] Anthropic (raw HTTP, no SDK).
+- [ ] OpenAI-compatible backend (covers OpenAI, Groq, OpenRouter, LM Studio).
+- [ ] Streaming responses for terminal and future TUI use.
+- [ ] Retry with exponential backoff on 429 and 5xx, respecting `retry-after`.
+- [ ] Usage accounting split across input, output, cache read, cache write.
 
-- [ ] Discord transport (bot, DMs, slash commands)
-- [ ] Telegram transport (bot, commands)
-- [ ] Transport interface (clean abstraction)
-- [ ] Per-user history isolation
-- [ ] Approval workflow for dangerous operations
+### Context engineering
 
----
+- [ ] Prompt caching on system prompt and tool definitions.
+- [ ] Token-budgeted history (default 30k tokens), not a message count.
+- [ ] Tool-result cap (default 4k) before results enter history.
+- [ ] Summarize-on-trim for evicted messages.
+- [ ] Rolling summary compaction every N turns to keep the cache prefix stable.
 
-## Phase 3: Configuration (v0.3)
+### Memory
 
-**Goal:** Easy setup for non-technical users.
+- [ ] File backend (jsonl, per agent).
+- [ ] Typed entries: preference, fact, note.
+- [ ] Interface: `Load`, `Save`, `Search`. Substring search is fine for v0.1.
+- [ ] Automatic detection of user corrections and preferences from chat.
 
-- [ ] `vika setup` interactive wizard
-- [ ] Global config (~/.vika/config.yaml)
-- [ ] Provider configuration (API keys, defaults)
-- [ ] Transport token management
-- [ ] Connection testing (verify keys work)
+### Per-agent workspace
 
----
+- [ ] Each agent owns `~/.vika/agents/<name>/` with its own memory, workspace, and logs.
+- [ ] File tools default-scoped to the agent's workspace.
+- [ ] Paths outside the workspace require explicit approval, persisted per agent.
+- [ ] Path resolution blocks `..` escapes and symlinks pointing outside the workspace.
 
-## Phase 4: Terminal UI (v0.4)
+### Tools
 
-**Goal:** Claude Code-like experience in terminal.
+- [ ] Tool interface with a stable JSON schema so definitions cache cleanly.
+- [ ] Built-in: `bash`, `file_read`, `file_edit`, `file_list`, `web_search`, `web_fetch`.
+- [ ] Per-tool timeout and result-cap overrides via character YAML.
+- [ ] Danger detection on bash and file writes, with an approval flow.
 
-- [ ] `vika chat` command
-- [ ] Interactive TUI (bubbletea or tview)
-- [ ] Markdown rendering
-- [ ] Command history
-- [ ] Syntax highlighting for code blocks
+### Character
 
----
+- [ ] YAML loader with strict validation.
+- [ ] Required fields: `name`, `model`, `system_prompt`.
+- [ ] Optional fields: `tools`, `tool_config`, `memory`, `context`, `logging`.
+- [ ] Validation reports every problem at once, not just the first.
 
-## Phase 5: Isolation (v0.5)
+### Transports
 
-**Goal:** Safe multi-agent operation.
+- [ ] CLI REPL (`vika chat <char.yaml>`).
 
-- [ ] Per-agent workspace (~/.vika/agents/<name>/workspace/)
-- [ ] Workspace-scoped file tools
-- [ ] Memory per agent
-- [ ] Agent creation wizard (`vika create`)
+### Observability
 
----
+- [ ] Structured JSON log line per turn: tokens, cache hits, tools used, cost, duration, loop iterations.
+- [ ] Colored terminal logger for interactive sessions.
+- [ ] Cost estimation per provider and model.
 
-## Phase 6: Expansion (v0.6-v0.9)
+### CLI
 
-**Goal:** More providers, tools, and integrations.
+- [ ] `vika run <char.yaml>`: start an agent.
+- [ ] `vika chat <char.yaml>`: interactive terminal session.
+- [ ] `vika version`.
 
-- [ ] Slack transport
-- [ ] HTTP transport (REST endpoint)
-- [ ] Ollama provider (local models)
-- [ ] Web tools: web_search, web_fetch
-- [ ] GitHub tool
-- [ ] SQLite memory backend
-- [ ] pgvector memory backend (RAG)
+## Next (v0.2 to v0.7)
 
----
+### v0.2: chat transports
 
-## Phase 7: Release (v1.0)
+- [ ] Discord transport (bot, DMs, slash commands).
+- [ ] Slack transport (bot, DMs, slash commands).
+- [ ] Telegram transport (bot, commands).
+- [ ] Approval flow shared across transports.
+- [ ] Per-user conversation isolation inside a single agent.
 
-**Goal:** Production-ready, documented, shipped.
+### v0.3: scaffolding new agents
 
-- [ ] Comprehensive docs (all vika-docs files)
-- [ ] Install script (curl ... | sh)
-- [ ] Go module published
-- [ ] GitHub releases with binaries
-- [ ] First community feedback cycle
-- [ ] Performance tuning
+- [ ] `vika create <name>` scaffolds a new agent from a template.
+- [ ] Built-in templates: `personal`, `support`, `dev`.
+- [ ] Generated output: `main.go`, `character.yaml`, `.env.example`, `Makefile`.
+- [ ] `vika build <dir>` wraps `go build` so non-Go users get one command.
 
----
+### v0.4: config and setup
 
-## Future ideas (post-v1.0)
+- [ ] `vika setup` wizard for API keys, transport tokens, default provider.
+- [ ] Encrypted global config at `~/.vika/config`.
+- [ ] Per-agent secret store, separate from the global config.
+- [ ] Connection test to verify keys and tokens before first run.
 
-These are not planned yet but mentioned for direction:
+### v0.5: RAG and richer memory
 
-- **Voice** — Whisper transcription (like [nevinho](https://github.com/lucasnevespereira/nevinho))
-- **Extensions** — External Go modules (vika-ext-notion, etc.)
-- **Multi-agent** — Agents talking to each other
-- **Web UI** — Simple dashboard
-- **Plugins** — MCP support (if demand materializes)
+- [ ] SQLite memory backend.
+- [ ] pgvector memory backend for larger deployments.
+- [ ] RAG pipeline: chunking, embedding, retrieval, injection.
+- [ ] `vika ingest <agent> <path>` loads documents into an agent's memory.
+- [ ] Retrieval config in YAML: top-k, min score, sources.
 
----
+### v0.6: terminal polish
 
-## Release cadence
+- [ ] Bubbletea TUI for `vika chat`.
+- [ ] Streaming token rendering.
+- [ ] Markdown rendering with syntax highlighting.
+- [ ] Slash commands: `/new`, `/model`, `/tools`, `/status`.
+- [ ] Ctrl+C cancels the current turn, not the session.
 
-- Alpha/beta during v0.1-v0.5 (internal testing)
-- Release candidate for v1.0
-- Semantic versioning after v1.0
-- Patch releases for bugs, minor releases for features
+### v0.7: deploy and operate
 
----
+- [ ] Install script (`curl ... | sh`).
+- [ ] systemd service template for Linux VPS deploys.
+- [ ] `vika logs`, `vika status`, `vika stop`.
+- [ ] Optional Prometheus endpoint.
+- [ ] GitHub releases with prebuilt binaries for common platforms.
 
-## Contributing
+## Later
 
-Early phases: maintainer-driven.
-Post-v1.0: contributions welcome. Check issues for starter tasks.
+- **Extensions repo.** A separate `vika-extensions` repo for integrations like Notion, Google Calendar, GitHub issues, Linear.
+- **Plugin loading beyond Go modules.** Subprocess tools over JSON stdio and WASM plugins are both worth exploring once the core is stable.
+- **Voice input.** Local Whisper transcription for voice messages on Discord or Telegram.
+- **Web dashboard.** Read-only view of agents, memory, and turn logs.
+- **Multi-agent coordination.** Handoff to another agent as a tool call, pursued only when a concrete use case shows up.
+- **Evaluators.** Regression tests against a fixed prompt set.
+- **MCP support.** Reconsidered once there is demand from real users.
+
+## v1.0 criteria
+
+- Core harness stable and documented.
+- Discord and Slack transports running in production somewhere.
+- At least one non-default agent built with Vika and deployed.
+- Test coverage on the agent loop, context trimming, and tool registry.
+- Install script and prebuilt binaries published.
+- Clear upgrade path from v0.x.
