@@ -15,6 +15,20 @@ An assistant has personality, tools, memory, and a transport. Same binary,
 different YAMLs. One for a coding assistant, one for a support bot,
 one for a Discord mascot. Configure in YAML, run, done.
 
+## What is Vika?
+
+Vika is the harness your assistants run on. It handles the agent loop, context engineering, prompt caching, memory, tool execution, and transport wiring. You write the character YAML, the harness does the rest.
+
+- **Providers**: Anthropic, OpenAI-compatible, Ollama.
+- **Tools**: bash, file, web search, grep, glob.
+- **Memory**: file, SQLite, pgvector.
+- **Transports**: terminal, Discord, Slack, Telegram.
+- **Per-agent isolation**: workspace, memory, and secrets per assistant.
+- **Observability**: structured per-turn logs with tokens, cache hits, and cost.
+- **Scaffolder**: `vika create` spins up a new assistant.
+
+---
+
 ## Quickstart
 
 ```bash
@@ -22,19 +36,6 @@ go install github.com/snowztech/vika/cmd/vika@latest
 vika setup
 vika run
 ```
-
----
-
-## What is Vika?
-
-Vika is the harness your assistants run on. It handles the agent loop, context engineering, prompt caching, memory, tool execution, and transport wiring, so you don't rewrite them for every bot.
-
-- **Providers**: Anthropic, OpenAI-compatible, Ollama.
-- **Tools**: bash, file, web search, grep, glob.
-- **Memory**: file, SQLite, pgvector.
-- **Transports**: terminal, Discord, Slack, Telegram.
-- **Per-agent isolation**: workspace, memory, and secrets per assistant.
-- **Scaffolder**: `vika create` spins up a new assistant.
 
 ---
 
