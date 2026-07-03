@@ -31,6 +31,17 @@ func NewOpenRouter(apiKey string) *OpenAICompat {
 	}
 }
 
+func NewOpenAICompat(apiKey, baseURL string) *OpenAICompat {
+	if baseURL == "" {
+		baseURL = "https://api.openai.com/v1"
+	}
+	return &OpenAICompat{
+		apiKey:  apiKey,
+		baseURL: baseURL,
+		http:    http.DefaultClient,
+	}
+}
+
 func (o *OpenAICompat) Name() string { return "openai" }
 
 func (o *OpenAICompat) Complete(ctx context.Context, req *Request) (*Response, error) {

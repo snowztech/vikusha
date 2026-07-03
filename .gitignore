@@ -5,3 +5,5 @@
 ignored/
 
 .env
+.gocache/
+.gomodcache/
