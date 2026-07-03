@@ -29,17 +29,17 @@ Vikusha is the harness your assistants run on. It handles the agent loop, contex
 
 ## Quickstart
 
-Create `character.yaml`:
+### Option 1: run an agent from YAML
+
+Create `character.yaml`.
 
 ```yaml
 name: Helper
 model: gpt-4o-mini
-system_prompt: You are a concise assistant. Answer in one short paragraph.
+system_prompt: You are a concise assistant.
 provider:
   name: openai
   api_key_env: OPENAI_API_KEY
-tools:
-  - file_read
 ```
 
 ```bash
@@ -48,38 +48,16 @@ export OPENAI_API_KEY=...
 vikusha chat character.yaml
 ```
 
-## Creating an Agent
-
-There are two main ways to create an agent.
-
-### 1. Character YAML
-
-Use YAML when you want the assistant definition to live in a file. This is the best path for CLI usage and for apps that want assistants to be configured without changing Go code.
+You can load the same YAML from Go.
 
 ```go
 a, err := vikusha.LoadAgent("character.yaml", vikusha.Options{})
 reply, err := a.Chat(ctx, "lucas", "hello")
 ```
 
-Currently implemented character fields:
+### Option 2: create an agent in Go
 
-```yaml
-name: Helper
-model: gpt-4o-mini
-system_prompt: You are helpful.
-provider:
-  name: openai # openai, openrouter, anthropic
-  api_key_env: OPENAI_API_KEY
-  # base_url: http://localhost:1234/v1
-tools:
-  - file_read
-```
-
-If `provider` is omitted, Vikusha infers Anthropic for models beginning with `claude`; otherwise it uses OpenAI-compatible chat completions. The default env vars are `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, and `GROQ_API_KEY`, depending on the provider.
-
-### 2. Go code
-
-Use Go code when you want to build the agent yourself. In this path, you pass the provider and tool registry directly through `agent.Options`; Vikusha does not read YAML or infer provider settings for you.
+Use `agent.New` when you want to pass the provider and tools yourself.
 
 ```go
 reg := tool.NewRegistry()
@@ -94,7 +72,25 @@ a, err := agent.New(agent.Options{
 })
 ```
 
-The top-level `vikusha.Options` type is not the agent config. It only customizes the YAML loader path, such as overriding env lookup or adding extra tools by name.
+Both paths return an `*agent.Agent`; call `Chat(ctx, userID, msg)` to run a turn.
+
+## Character YAML
+
+The fields implemented today are:
+
+```yaml
+name: Helper
+model: gpt-4o-mini
+system_prompt: You are helpful.
+provider:
+  name: openai # openai, openrouter, anthropic
+  api_key_env: OPENAI_API_KEY
+  # base_url: http://localhost:1234/v1
+tools:
+  - file_read
+```
+
+If `provider` is omitted, Vikusha infers Anthropic for models beginning with `claude`; otherwise it uses OpenAI-compatible chat completions. The default env vars are `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, and `GROQ_API_KEY`, depending on the provider.
 
 See:
 
