@@ -48,13 +48,13 @@ export OPENAI_API_KEY=...
 vikusha chat character.yaml
 ```
 
-## Creating Agents
+## Creating an Agent
 
-Vikusha can create agents from YAML or from Go code. All paths return an `*agent.Agent`, which you use through `Chat(ctx, userID, msg)`.
+There are two main ways to create an agent.
 
-### 1. YAML-first
+### 1. Character YAML
 
-Use this when you want the same assistant definition to work from the CLI and from an embedded Go app.
+Use YAML when you want the assistant definition to live in a file. This is the best path for CLI usage and for apps that want assistants to be configured without changing Go code.
 
 ```go
 a, err := vikusha.LoadAgent("character.yaml", vikusha.Options{})
@@ -77,24 +77,9 @@ tools:
 
 If `provider` is omitted, Vikusha infers Anthropic for models beginning with `claude`; otherwise it uses OpenAI-compatible chat completions. The default env vars are `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, and `GROQ_API_KEY`, depending on the provider.
 
-### 2. Struct-first
+### 2. Go code
 
-Use this when your app already has config in memory, but you still want Vikusha to wire providers and built-in tools.
-
-```go
-c := &character.Character{
-	Name:         "Helper",
-	Model:        "gpt-4o-mini",
-	SystemPrompt: "You are helpful.",
-	Tools:        []string{"file_read"},
-}
-
-a, err := vikusha.NewAgent(c, vikusha.Options{})
-```
-
-### 3. Manual wiring
-
-Use `agent.New` directly when you want full control over provider instances, tool registries, memory, or tests. This is the lower-level API that the YAML and struct-first helpers build on.
+Use Go code when you want to build the agent yourself. In this path, you pass the provider and tool registry directly through `agent.Options`; Vikusha does not read YAML or infer provider settings for you.
 
 ```go
 reg := tool.NewRegistry()
@@ -109,9 +94,11 @@ a, err := agent.New(agent.Options{
 })
 ```
 
+The top-level `vikusha.Options` type is not the agent config. It only customizes the YAML loader path, such as overriding env lookup or adding extra tools by name.
+
 See:
 
-- [examples/from_yaml](examples/from_yaml): load a character file through the high-level API.
+- [examples/from_yaml](examples/from_yaml): create an agent from YAML.
 - [examples/hello](examples/hello): create the smallest agent with `agent.New`.
 - [examples/file_read](examples/file_read): create an agent with a registered tool.
 
