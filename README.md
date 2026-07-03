@@ -29,12 +29,29 @@ Vikusha is the harness your assistants run on. It handles the agent loop, contex
 
 ## Quickstart
 
+Create a character file:
+
+```yaml
+# character.yaml
+name: Helper
+model: gpt-4o-mini
+system_prompt: You are a concise assistant. Answer in one short paragraph.
+provider:
+  name: openai
+  api_key_env: OPENAI_API_KEY
+tools:
+  - file_read
+```
+
+Run it from the terminal:
+
 ```bash
 go install github.com/snowztech/vikusha/cmd/vikusha@latest
+export OPENAI_API_KEY=...
 vikusha chat character.yaml
 ```
 
-Or embed the harness in your own Go binary:
+Or embed the same character in your own Go binary:
 
 ```go
 package main
@@ -60,6 +77,72 @@ func main() {
 	fmt.Println(reply)
 }
 ```
+
+## Creating Agents
+
+Vikusha supports three creation paths.
+
+### 1. YAML-first
+
+Use this when you want the same assistant definition to work from the CLI and from Go.
+
+```go
+a, err := vikusha.LoadAgent("character.yaml", vikusha.Options{})
+```
+
+Currently implemented character fields:
+
+```yaml
+name: Helper
+model: gpt-4o-mini
+system_prompt: You are helpful.
+provider:
+  name: openai # openai, openrouter, anthropic
+  api_key_env: OPENAI_API_KEY
+  # base_url: http://localhost:1234/v1
+tools:
+  - file_read
+```
+
+If `provider` is omitted, Vikusha infers Anthropic for models beginning with `claude`; otherwise it uses OpenAI-compatible chat completions. The default env vars are `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, and `GROQ_API_KEY`, depending on the provider.
+
+### 2. Struct-first
+
+Use this when your app already has config in memory and you still want Vikusha to wire providers and built-in tools.
+
+```go
+c := &character.Character{
+	Name:         "Helper",
+	Model:        "gpt-4o-mini",
+	SystemPrompt: "You are helpful.",
+	Tools:        []string{"file_read"},
+}
+
+a, err := vikusha.NewAgent(c, vikusha.Options{})
+```
+
+### 3. Core API
+
+Use this when you want full control over providers, tools, memory, or tests.
+
+```go
+reg := tool.NewRegistry()
+reg.Register(file.NewRead())
+
+a, err := agent.New(agent.Options{
+	Name:         "Helper",
+	Model:        "gpt-4o-mini",
+	SystemPrompt: "You are helpful.",
+	Provider:     llm.NewOpenAI(os.Getenv("OPENAI_API_KEY")),
+	Tools:        reg,
+})
+```
+
+See:
+
+- [examples/from_yaml](examples/from_yaml): load a character file through the high-level API.
+- [examples/hello](examples/hello): create the smallest agent with `agent.New`.
+- [examples/file_read](examples/file_read): create an agent with a registered tool.
 
 ---
 

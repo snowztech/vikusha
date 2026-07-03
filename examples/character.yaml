@@ -1,0 +1,8 @@
+name: Helper
+model: gpt-4o-mini
+system_prompt: You are a concise assistant. Answer in one short paragraph.
+provider:
+  name: openai
+  api_key_env: OPENAI_API_KEY
+tools:
+  - file_read

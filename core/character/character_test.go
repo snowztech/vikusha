@@ -46,3 +46,18 @@ system_prompt: Be useful.
 		t.Fatalf("APIKeyEnv() = %q, want ANTHROPIC_API_KEY", got)
 	}
 }
+
+func TestOpenRouterDefaultAPIKeyEnv(t *testing.T) {
+	c := Character{
+		Name:         "Router",
+		Model:        "openai/gpt-4o-mini",
+		SystemPrompt: "Be useful.",
+		Provider:     ProviderConfig{Name: "openrouter"},
+	}
+	if got := c.ProviderName(); got != "openai" {
+		t.Fatalf("ProviderName() = %q, want openai", got)
+	}
+	if got := c.APIKeyEnv(); got != "OPENROUTER_API_KEY" {
+		t.Fatalf("APIKeyEnv() = %q, want OPENROUTER_API_KEY", got)
+	}
+}

@@ -77,6 +77,12 @@ func (c Character) APIKeyEnv() string {
 	if c.Provider.APIKeyEnv != "" {
 		return c.Provider.APIKeyEnv
 	}
+	switch strings.ToLower(strings.TrimSpace(c.Provider.Name)) {
+	case "openrouter":
+		return "OPENROUTER_API_KEY"
+	case "groq":
+		return "GROQ_API_KEY"
+	}
 	switch c.ProviderName() {
 	case "anthropic":
 		return "ANTHROPIC_API_KEY"

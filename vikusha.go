@@ -60,6 +60,9 @@ func provider(c *character.Character, opts Options) (llm.Provider, error) {
 		if c.Provider.BaseURL != "" {
 			return llm.NewOpenAICompat(apiKey, c.Provider.BaseURL), nil
 		}
+		if strings.EqualFold(c.Provider.Name, "openrouter") {
+			return llm.NewOpenRouter(apiKey), nil
+		}
 		return llm.NewOpenAI(apiKey), nil
 	default:
 		return nil, fmt.Errorf("unsupported provider %q", c.ProviderName())
