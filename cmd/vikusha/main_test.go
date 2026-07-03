@@ -7,12 +7,16 @@ import (
 )
 
 func TestVersion(t *testing.T) {
+	oldVersion := version
+	version = "test-version"
+	t.Cleanup(func() { version = oldVersion })
+
 	var out, errOut bytes.Buffer
 	if err := run([]string{"version"}, strings.NewReader(""), &out, &errOut); err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.TrimSpace(out.String()); got != "dev" {
-		t.Fatalf("version output = %q, want dev", got)
+	if got := strings.TrimSpace(out.String()); got != "test-version" {
+		t.Fatalf("version output = %q, want test-version", got)
 	}
 }
 
