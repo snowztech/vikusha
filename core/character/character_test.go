@@ -1,0 +1,48 @@
+package character
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+func TestLoadValidatesAllRequiredFields(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "character.yaml")
+	if err := os.WriteFile(path, []byte("tools:\n  - file_read\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := Load(path)
+	if err == nil {
+		t.Fatal("expected validation error")
+	}
+	msg := err.Error()
+	for _, want := range []string{"name is required", "model is required", "system_prompt is required"} {
+		if !strings.Contains(msg, want) {
+			t.Fatalf("expected %q in %q", want, msg)
+		}
+	}
+}
+
+func TestLoadInfersAnthropicProvider(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "character.yaml")
+	if err := os.WriteFile(path, []byte(`
+name: Coach
+model: claude-sonnet-4-6
+system_prompt: Be useful.
+`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	c, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := c.ProviderName(); got != "anthropic" {
+		t.Fatalf("ProviderName() = %q, want anthropic", got)
+	}
+	if got := c.APIKeyEnv(); got != "ANTHROPIC_API_KEY" {
+		t.Fatalf("APIKeyEnv() = %q, want ANTHROPIC_API_KEY", got)
+	}
+}

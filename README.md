@@ -31,8 +31,34 @@ Vikusha is the harness your assistants run on. It handles the agent loop, contex
 
 ```bash
 go install github.com/snowztech/vikusha/cmd/vikusha@latest
-vikusha setup
-vikusha run
+vikusha chat character.yaml
+```
+
+Or embed the harness in your own Go binary:
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	"github.com/snowztech/vikusha"
+)
+
+func main() {
+	a, err := vikusha.LoadAgent("character.yaml", vikusha.Options{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	reply, err := a.Chat(context.Background(), "lucas", "hello")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(reply)
+}
 ```
 
 ---
