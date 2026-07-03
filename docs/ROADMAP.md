@@ -12,16 +12,16 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 
 ### Agent loop
 
-- [ ] `agent.Chat(ctx, userID, msg)` as the single entry point.
-- [ ] Tool-call loop with a hard iteration cap.
+- [x] `agent.Chat(ctx, userID, msg)` as the single entry point.
+- [x] Tool-call loop with a hard iteration cap.
 - [ ] Per-user serialization so one user's turn cannot interleave with itself.
 - [ ] Cancellation via context, surfaced through a per-user cancel handle.
-- [ ] Panic recovery around tool execution.
+- [x] Panic recovery around tool execution.
 
 ### Providers
 
-- [ ] Anthropic (raw HTTP, no SDK).
-- [ ] OpenAI-compatible backend (covers OpenAI, Groq, OpenRouter, LM Studio).
+- [x] Anthropic (raw HTTP, no SDK).
+- [x] OpenAI-compatible backend (covers OpenAI, Groq, OpenRouter, LM Studio).
 - [ ] Streaming responses for terminal and future TUI use.
 - [ ] Retry with exponential backoff on 429 and 5xx, respecting `retry-after`.
 - [ ] Usage accounting split across input, output, cache read, cache write.
@@ -38,7 +38,7 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 
 - [ ] File backend (jsonl, per agent).
 - [ ] Typed entries: preference, fact, note.
-- [ ] Interface: `Load`, `Save`, `Search`. Substring search is fine for v0.1.
+- [x] Interface: `Load`, `Save`, `Search`. Substring search is fine for v0.1.
 - [ ] Automatic detection of user corrections and preferences from chat.
 
 ### Per-agent workspace
@@ -50,7 +50,7 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 
 ### Tools
 
-- [ ] Tool interface with a stable JSON schema so definitions cache cleanly.
+- [x] Tool interface with a stable JSON schema so definitions cache cleanly.
 - [ ] Built-in: `bash`, `file_read`, `file_edit`, `file_list`, `web_search`, `web_fetch`.
 - [ ] Per-tool timeout and result-cap overrides via character YAML.
 - [ ] Danger detection on bash and file writes, with an approval flow.
@@ -58,13 +58,13 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 ### Character
 
 - [ ] YAML loader with strict validation.
-- [ ] Required fields: `name`, `model`, `system_prompt`.
+- [x] Required fields: `name`, `model`, `system_prompt`.
 - [ ] Optional fields: `tools`, `tool_config`, `memory`, `context`, `logging`.
-- [ ] Validation reports every problem at once, not just the first.
+- [x] Validation reports every problem at once, not just the first.
 
 ### Transports
 
-- [ ] CLI REPL (`vikusha chat <char.yaml>`).
+- [x] CLI REPL (`vikusha chat <char.yaml>`).
 
 ### Observability
 
@@ -74,9 +74,9 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 
 ### CLI
 
-- [ ] `vikusha run <char.yaml>`: start an agent.
-- [ ] `vikusha chat <char.yaml>`: interactive terminal session.
-- [ ] `vikusha version`.
+- [x] `vikusha run <char.yaml>`: start an agent.
+- [x] `vikusha chat <char.yaml>`: interactive terminal session.
+- [x] `vikusha version`.
 
 ## Next (v0.2 to v0.7)
 
