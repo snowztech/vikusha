@@ -7,3 +7,4 @@ ignored/
 .env
 .gocache/
 .gomodcache/
+.tmpbin/

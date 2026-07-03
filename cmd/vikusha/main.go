@@ -16,7 +16,7 @@ import (
 	"github.com/snowztech/vikusha/core/agent"
 )
 
-const version = "dev"
+var version = "dev"
 
 func main() {
 	if err := run(os.Args[1:], os.Stdin, os.Stdout, os.Stderr); err != nil {
