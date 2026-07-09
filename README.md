@@ -29,37 +29,74 @@ Vikusha is the harness your assistants run on. It handles the agent loop, contex
 
 ## Quickstart
 
+### Option 1: run an agent from YAML
+
+Create `character.yaml`.
+
+```yaml
+name: Helper
+model: gpt-4o-mini
+system_prompt: You are a concise assistant.
+provider:
+  name: openai
+  api_key_env: OPENAI_API_KEY
+```
+
 ```bash
 go install github.com/snowztech/vikusha/cmd/vikusha@latest
+export OPENAI_API_KEY=...
 vikusha chat character.yaml
 ```
 
-Or embed the harness in your own Go binary:
+You can load the same YAML from Go.
 
 ```go
-package main
-
-import (
-	"context"
-	"fmt"
-	"log"
-
-	"github.com/snowztech/vikusha"
-)
-
-func main() {
-	a, err := vikusha.LoadAgent("character.yaml", vikusha.Options{})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	reply, err := a.Chat(context.Background(), "lucas", "hello")
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(reply)
-}
+a, err := vikusha.LoadAgent("character.yaml", vikusha.Options{})
+reply, err := a.Chat(ctx, "lucas", "hello")
 ```
+
+### Option 2: create an agent in Go
+
+Use `agent.New` when you want to pass the provider and tools yourself.
+
+```go
+reg := tool.NewRegistry()
+reg.Register(file.NewRead())
+
+a, err := agent.New(agent.Options{
+	Name:         "Helper",
+	Model:        "gpt-4o-mini",
+	SystemPrompt: "You are helpful.",
+	Provider:     llm.NewOpenAI(os.Getenv("OPENAI_API_KEY")),
+	Tools:        reg,
+})
+```
+
+Both paths return an `*agent.Agent`; call `Chat(ctx, userID, msg)` to run a turn.
+
+## Character YAML
+
+The fields implemented today are:
+
+```yaml
+name: Helper
+model: gpt-4o-mini
+system_prompt: You are helpful.
+provider:
+  name: openai # openai, openrouter, anthropic
+  api_key_env: OPENAI_API_KEY
+  # base_url: http://localhost:1234/v1
+tools:
+  - file_read
+```
+
+If `provider` is omitted, Vikusha infers Anthropic for models beginning with `claude`; otherwise it uses OpenAI-compatible chat completions. The default env vars are `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, and `GROQ_API_KEY`, depending on the provider.
+
+See:
+
+- [examples/from_yaml](examples/from_yaml): create an agent from YAML.
+- [examples/hello](examples/hello): create the smallest agent with `agent.New`.
+- [examples/file_read](examples/file_read): create an agent with a registered tool.
 
 ---
 
