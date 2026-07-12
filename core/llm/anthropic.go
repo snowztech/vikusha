@@ -1,11 +1,9 @@
 package llm
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 )
 
@@ -29,26 +27,13 @@ func (a *Anthropic) Complete(ctx context.Context, req *Request) (*Response, erro
 		return nil, fmt.Errorf("marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, anthropicEndpoint, bytes.NewReader(body))
+	raw, err := postJSONWithRetry(ctx, a.http, anthropicEndpoint, map[string]string{
+		"content-type":      "application/json",
+		"x-api-key":         a.apiKey,
+		"anthropic-version": anthropicVersion,
+	}, body, "anthropic")
 	if err != nil {
 		return nil, err
-	}
-	httpReq.Header.Set("content-type", "application/json")
-	httpReq.Header.Set("x-api-key", a.apiKey)
-	httpReq.Header.Set("anthropic-version", anthropicVersion)
-
-	resp, err := a.http.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("http call: %w", err)
-	}
-	defer resp.Body.Close()
-
-	raw, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("read body: %w", err)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("anthropic %d: %s", resp.StatusCode, raw)
 	}
 
 	var wire anthropicResp
@@ -74,14 +59,14 @@ type anthropicMessage struct {
 }
 
 type anthropicBlock struct {
-	Type       string          `json:"type"`
-	Text       string          `json:"text,omitempty"`
-	ID         string          `json:"id,omitempty"`
-	Name       string          `json:"name,omitempty"`
-	Input      json.RawMessage `json:"input,omitempty"`
-	ToolUseID  string          `json:"tool_use_id,omitempty"`
-	Content    string          `json:"content,omitempty"`
-	IsError    bool            `json:"is_error,omitempty"`
+	Type      string          `json:"type"`
+	Text      string          `json:"text,omitempty"`
+	ID        string          `json:"id,omitempty"`
+	Name      string          `json:"name,omitempty"`
+	Input     json.RawMessage `json:"input,omitempty"`
+	ToolUseID string          `json:"tool_use_id,omitempty"`
+	Content   string          `json:"content,omitempty"`
+	IsError   bool            `json:"is_error,omitempty"`
 }
 
 type anthropicTool struct {

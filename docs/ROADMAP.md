@@ -41,7 +41,7 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 - [x] Anthropic (raw HTTP, no SDK).
 - [x] OpenAI-compatible backend (covers OpenAI, Groq, OpenRouter, LM Studio).
 - [ ] Streaming responses for terminal and future TUI use.
-- [ ] Retry with exponential backoff on 429 and 5xx, respecting `retry-after`.
+- [x] Retry with exponential backoff on 429 and 5xx, respecting `retry-after`.
 - [ ] Usage accounting split across input, output, cache read, cache write.
 
 ### Context engineering
