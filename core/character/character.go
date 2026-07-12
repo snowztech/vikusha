@@ -15,6 +15,7 @@ type Character struct {
 	SystemPrompt string         `yaml:"system_prompt"`
 	Provider     ProviderConfig `yaml:"provider"`
 	Memory       MemoryConfig   `yaml:"memory"`
+	Context      ContextConfig  `yaml:"context"`
 	Tools        []string       `yaml:"tools"`
 }
 
@@ -27,6 +28,10 @@ type ProviderConfig struct {
 type MemoryConfig struct {
 	Backend string `yaml:"backend"`
 	Path    string `yaml:"path"`
+}
+
+type ContextConfig struct {
+	HistoryTokenBudget int `yaml:"history_token_budget"`
 }
 
 func Load(path string) (*Character, error) {
@@ -63,6 +68,9 @@ func (c Character) Validate() []string {
 	}
 	if c.Memory.Backend != "" && memoryBackend(c.Memory.Backend) == "" {
 		errs = append(errs, fmt.Sprintf("memory.backend %q is not supported", c.Memory.Backend))
+	}
+	if c.Context.HistoryTokenBudget < 0 {
+		errs = append(errs, "context.history_token_budget cannot be negative")
 	}
 	for _, t := range c.Tools {
 		if strings.TrimSpace(t) == "" {

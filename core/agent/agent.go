@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	maxIterations        = 10
-	defaultToolResultCap = 4000
+	maxIterations             = 10
+	defaultToolResultCap      = 4000
+	defaultHistoryTokenBudget = 30000
 )
 
 type Agent struct {
@@ -24,7 +25,10 @@ type Agent struct {
 	tools         *tool.Registry
 	memory        memory.Memory
 	toolResultCap int
+	historyBudget int
 	logger        TurnLogger
+	historyMu     sync.Mutex
+	history       map[string][]llm.Message
 	turnsMu       sync.Mutex
 	userTurns     map[string]chan struct{}
 	cancelMu      sync.Mutex
@@ -38,16 +42,17 @@ type turnCancel struct {
 }
 
 // Options contains the runtime dependencies required to construct an Agent
-// directly. Most users should prefer vikusha.LoadAgent or vikusha.NewAgent.
+// directly. Most users should prefer loading character YAML with Vikusha.
 type Options struct {
-	Name          string
-	Model         string
-	SystemPrompt  string
-	Provider      llm.Provider
-	Tools         *tool.Registry
-	Memory        memory.Memory
-	ToolResultCap int
-	Logger        TurnLogger
+	Name               string
+	Model              string
+	SystemPrompt       string
+	Provider           llm.Provider
+	Tools              *tool.Registry
+	Memory             memory.Memory
+	ToolResultCap      int
+	HistoryTokenBudget int
+	Logger             TurnLogger
 }
 
 type TurnLogger interface {
@@ -87,6 +92,9 @@ func New(opts Options) (*Agent, error) {
 	if opts.ToolResultCap <= 0 {
 		opts.ToolResultCap = defaultToolResultCap
 	}
+	if opts.HistoryTokenBudget <= 0 {
+		opts.HistoryTokenBudget = defaultHistoryTokenBudget
+	}
 	return &Agent{
 		name:          opts.Name,
 		model:         opts.Model,
@@ -95,7 +103,9 @@ func New(opts Options) (*Agent, error) {
 		tools:         opts.Tools,
 		memory:        opts.Memory,
 		toolResultCap: opts.ToolResultCap,
+		historyBudget: opts.HistoryTokenBudget,
 		logger:        opts.Logger,
+		history:       map[string][]llm.Message{},
 		userTurns:     map[string]chan struct{}{},
 		userCancels:   map[string]turnCancel{},
 	}, nil

@@ -47,7 +47,7 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 ### Context engineering
 
 - [ ] Prompt caching on system prompt and tool definitions.
-- [ ] Token-budgeted history (default 30k tokens), not a message count.
+- [x] Token-budgeted history (default 30k estimated tokens), not a message count.
 - [x] Tool-result cap (default 4k) before results enter history.
 - [ ] Summarize-on-trim for evicted messages.
 - [ ] Rolling summary compaction every N turns to keep the cache prefix stable.

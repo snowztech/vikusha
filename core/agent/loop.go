@@ -38,9 +38,7 @@ func (a *Agent) Chat(ctx context.Context, userID, msg string) (string, error) {
 		event.Error = err.Error()
 		return "", err
 	}
-	msgs := []llm.Message{
-		{Role: "user", Content: []llm.Block{{Type: llm.BlockText, Text: msg}}},
-	}
+	msgs := a.messagesForTurn(userID, msg)
 	tools := a.toolDefs()
 
 	for i := range maxIterations {
@@ -61,6 +59,7 @@ func (a *Agent) Chat(ctx context.Context, userID, msg string) (string, error) {
 		text, toolCalls := splitBlocks(resp.Content)
 		if len(toolCalls) == 0 {
 			event.FinishReason = "stop"
+			a.saveHistory(userID, append(msgs, llm.Message{Role: "assistant", Content: resp.Content}))
 			return text, nil
 		}
 

@@ -105,6 +105,8 @@ provider:
 memory:
   backend: file
   path: .vikusha/helper/memory
+context:
+  history_token_budget: 30000
 tools:
   - file_list
   - file_read
