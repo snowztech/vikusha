@@ -33,6 +33,17 @@ func TestMissingCommand(t *testing.T) {
 	}
 }
 
+func TestLogModesAreMutuallyExclusive(t *testing.T) {
+	var out, errOut bytes.Buffer
+	err := run([]string{"chat", "-log-json", "-log-terminal", "character.yaml"}, strings.NewReader(""), &out, &errOut)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "-log-json and -log-terminal") {
+		t.Fatalf("error = %q, want log mode conflict", err)
+	}
+}
+
 func TestCreateAgent(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
