@@ -57,6 +57,7 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 - [x] File backend (jsonl, per agent).
 - [x] Typed entries: preference, fact, note.
 - [x] Interface: `Load`, `Save`, `Search`. Substring search is fine for v0.1.
+- [x] Memory entries injected into the agent prompt.
 - [ ] Automatic detection of user corrections and preferences from chat.
 
 ### Per-agent workspace

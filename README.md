@@ -100,6 +100,9 @@ provider:
   name: openai # openai, openrouter, anthropic
   api_key_env: OPENAI_API_KEY
   # base_url: http://localhost:1234/v1
+memory:
+  backend: file
+  path: .vikusha/helper/memory
 tools:
   - file_read
 ```
