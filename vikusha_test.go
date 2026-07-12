@@ -1,6 +1,8 @@
 package vikusha
 
 import (
+	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -61,4 +63,47 @@ memory:
 	if !strings.Contains(err.Error(), "memory.path") {
 		t.Fatalf("error = %q, want memory.path", err)
 	}
+}
+
+func TestRegistryScopesBuiltInFileReadToWorkspace(t *testing.T) {
+	base := t.TempDir()
+	workspace := filepath.Join(base, "workspace")
+	if err := os.Mkdir(workspace, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(workspace, "note.txt"), []byte("inside"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(base, "secret.txt"), []byte("outside"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	reg, err := registry([]string{"file_read"}, Options{Workspace: workspace})
+	if err != nil {
+		t.Fatal(err)
+	}
+	read, ok := reg.Get("file_read")
+	if !ok {
+		t.Fatal("file_read not registered")
+	}
+
+	got, err := read.Run(context.Background(), mustJSON(t, map[string]string{"path": "note.txt"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "inside" {
+		t.Fatalf("file_read = %q, want inside", got)
+	}
+	if _, err := read.Run(context.Background(), mustJSON(t, map[string]string{"path": "../secret.txt"})); err == nil {
+		t.Fatal("expected workspace escape error")
+	}
+}
+
+func mustJSON(t *testing.T, v any) json.RawMessage {
+	t.Helper()
+	data, err := json.Marshal(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return data
 }

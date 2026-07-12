@@ -69,6 +69,8 @@ vikusha create writer
 vikusha chat writer
 ```
 
+Named agents get their own `workspace/`. Built-in file tools read from that workspace and reject paths outside it.
+
 You can load the same YAML from Go.
 
 ```go

@@ -15,8 +15,9 @@ import (
 )
 
 type Options struct {
-	Env   func(string) string
-	Tools map[string]tool.Tool
+	Env       func(string) string
+	Tools     map[string]tool.Tool
+	Workspace string
 }
 
 func LoadAgent(path string, opts Options) (*agent.Agent, error) {
@@ -93,7 +94,7 @@ func buildMemory(c *character.Character) (memory.Memory, error) {
 func registry(names []string, opts Options) (*tool.Registry, error) {
 	reg := tool.NewRegistry()
 	available := map[string]tool.Tool{
-		"file_read": file.NewRead(),
+		"file_read": file.NewRead(opts.Workspace),
 	}
 	for name, t := range opts.Tools {
 		available[name] = t

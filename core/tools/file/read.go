@@ -5,11 +5,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
-type Read struct{}
+type Read struct {
+	root string
+}
 
-func NewRead() *Read { return &Read{} }
+func NewRead(root ...string) *Read {
+	r := &Read{}
+	if len(root) > 0 {
+		r.root = strings.TrimSpace(root[0])
+	}
+	return r
+}
 
 func (r *Read) Name() string { return "file_read" }
 
@@ -42,9 +52,45 @@ func (r *Read) Run(ctx context.Context, input json.RawMessage) (string, error) {
 	if in.Path == "" {
 		return "", fmt.Errorf("invalid input: path is required")
 	}
-	data, err := os.ReadFile(in.Path)
+	path, err := r.resolve(in.Path)
+	if err != nil {
+		return "", err
+	}
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
 	return string(data), nil
+}
+
+func (r *Read) resolve(path string) (string, error) {
+	if r.root == "" {
+		return path, nil
+	}
+
+	root, err := filepath.Abs(r.root)
+	if err != nil {
+		return "", err
+	}
+	root, err = filepath.EvalSymlinks(root)
+	if err != nil {
+		return "", err
+	}
+
+	target := path
+	if !filepath.IsAbs(target) {
+		target = filepath.Join(root, target)
+	}
+	target, err = filepath.Abs(target)
+	if err != nil {
+		return "", err
+	}
+	target, err = filepath.EvalSymlinks(target)
+	if err != nil {
+		return "", err
+	}
+	if target != root && !strings.HasPrefix(target, root+string(os.PathSeparator)) {
+		return "", fmt.Errorf("path %q is outside workspace %q", path, root)
+	}
+	return target, nil
 }
