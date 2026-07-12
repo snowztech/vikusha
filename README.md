@@ -62,6 +62,14 @@ export OPENAI_API_KEY=...
 vikusha chat character.yaml
 ```
 
+Named agents are loaded from `~/.vikusha/agents/<name>/character.yaml`.
+
+```bash
+mkdir -p ~/.vikusha/agents/writer
+cp character.yaml ~/.vikusha/agents/writer/character.yaml
+vikusha chat writer
+```
+
 You can load the same YAML from Go.
 
 ```go

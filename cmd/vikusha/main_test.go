@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -28,5 +30,50 @@ func TestMissingCommand(t *testing.T) {
 	}
 	if !strings.Contains(errOut.String(), "vikusha chat") {
 		t.Fatalf("expected usage in stderr, got %q", errOut.String())
+	}
+}
+
+func TestResolveCharacterPathKeepsExplicitPath(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "character.yaml")
+
+	got, err := resolveCharacterPath(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != path {
+		t.Fatalf("resolveCharacterPath() = %q, want %q", got, path)
+	}
+}
+
+func TestResolveCharacterPathFindsNamedAgent(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	path := namedAgentCharacterPath(home, "writer")
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte("name: Writer\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := resolveCharacterPath("writer")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != path {
+		t.Fatalf("resolveCharacterPath() = %q, want %q", got, path)
+	}
+}
+
+func TestResolveCharacterPathReportsMissingNamedAgent(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	_, err := resolveCharacterPath("writer")
+	if err == nil {
+		t.Fatal("expected missing named agent error")
+	}
+	if !strings.Contains(err.Error(), namedAgentCharacterPath(home, "writer")) {
+		t.Fatalf("expected agent path in error, got %q", err.Error())
 	}
 }
