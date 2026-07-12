@@ -2,6 +2,7 @@ package agent
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/snowztech/vikusha/core/llm"
 	"github.com/snowztech/vikusha/core/memory"
@@ -17,6 +18,8 @@ type Agent struct {
 	provider     llm.Provider
 	tools        *tool.Registry
 	memory       memory.Memory
+	turnsMu      sync.Mutex
+	userTurns    map[string]chan struct{}
 }
 
 type Options struct {
@@ -48,6 +51,7 @@ func New(opts Options) (*Agent, error) {
 		provider:     opts.Provider,
 		tools:        opts.Tools,
 		memory:       opts.Memory,
+		userTurns:    map[string]chan struct{}{},
 	}, nil
 }
 

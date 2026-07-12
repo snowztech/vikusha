@@ -3,9 +3,11 @@ package agent
 import (
 	"context"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/snowztech/vikusha/core/llm"
 	"github.com/snowztech/vikusha/core/memory"
 )
 
@@ -66,5 +68,113 @@ func TestSystemWithMemoryNoEntriesUsesBasePrompt(t *testing.T) {
 	}
 	if system != "Base." {
 		t.Fatalf("system = %q, want base prompt", system)
+	}
+}
+
+type concurrentProvider struct {
+	mu        sync.Mutex
+	active    int
+	maxActive int
+}
+
+func (p *concurrentProvider) Name() string { return "concurrent" }
+
+func (p *concurrentProvider) Complete(ctx context.Context, req *llm.Request) (*llm.Response, error) {
+	p.mu.Lock()
+	p.active++
+	if p.active > p.maxActive {
+		p.maxActive = p.active
+	}
+	p.mu.Unlock()
+
+	time.Sleep(10 * time.Millisecond)
+
+	p.mu.Lock()
+	p.active--
+	p.mu.Unlock()
+
+	return &llm.Response{
+		Content: []llm.Block{{Type: llm.BlockText, Text: "ok"}},
+	}, nil
+}
+
+func TestChatSerializesTurnsPerUser(t *testing.T) {
+	provider := &concurrentProvider{}
+	a, err := New(Options{
+		Name:         "test",
+		Model:        "test-model",
+		SystemPrompt: "test",
+		Provider:     provider,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var wg sync.WaitGroup
+	for range 8 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if _, err := a.Chat(context.Background(), "lucas", "hello"); err != nil {
+				t.Errorf("Chat returned error: %v", err)
+			}
+		}()
+	}
+	wg.Wait()
+
+	if provider.maxActive != 1 {
+		t.Fatalf("max concurrent provider calls = %d, want 1", provider.maxActive)
+	}
+}
+
+type blockingProvider struct {
+	entered chan struct{}
+	release chan struct{}
+}
+
+func (p *blockingProvider) Name() string { return "blocking" }
+
+func (p *blockingProvider) Complete(ctx context.Context, req *llm.Request) (*llm.Response, error) {
+	close(p.entered)
+	select {
+	case <-p.release:
+		return &llm.Response{Content: []llm.Block{{Type: llm.BlockText, Text: "ok"}}}, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
+func TestChatWaitForUserTurnRespectsContext(t *testing.T) {
+	provider := &blockingProvider{
+		entered: make(chan struct{}),
+		release: make(chan struct{}),
+	}
+	a, err := New(Options{
+		Name:         "test",
+		Model:        "test-model",
+		SystemPrompt: "test",
+		Provider:     provider,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	done := make(chan error, 1)
+	go func() {
+		_, err := a.Chat(context.Background(), "lucas", "first")
+		done <- err
+	}()
+
+	<-provider.entered
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	defer cancel()
+	if _, err := a.Chat(ctx, "lucas", "second"); err == nil {
+		t.Fatal("expected context error while waiting for user turn")
+	}
+
+	close(provider.release)
+	if err := <-done; err != nil {
+		t.Fatalf("first Chat returned error: %v", err)
 	}
 }
