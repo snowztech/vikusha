@@ -1,6 +1,7 @@
 package character
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"strings"
@@ -35,7 +36,9 @@ func Load(path string) (*Character, error) {
 	}
 
 	var c Character
-	if err := yaml.Unmarshal(data, &c); err != nil {
+	dec := yaml.NewDecoder(bytes.NewReader(data))
+	dec.KnownFields(true)
+	if err := dec.Decode(&c); err != nil {
 		return nil, fmt.Errorf("parse character: %w", err)
 	}
 	if errs := c.Validate(); len(errs) > 0 {
