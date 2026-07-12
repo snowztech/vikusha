@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/snowztech/vikusha/core/llm"
 	"github.com/snowztech/vikusha/core/memory"
+	"github.com/snowztech/vikusha/core/tool"
 )
 
 type memoryStub struct {
@@ -96,20 +98,110 @@ func TestNewDefaultsToolResultCap(t *testing.T) {
 
 func TestCapToolResultLeavesShortOutput(t *testing.T) {
 	a := &Agent{toolResultCap: 5}
-	if got := a.capToolResult("hey"); got != "hey" {
+	got, truncated := a.capToolResult("hey")
+	if got != "hey" {
 		t.Fatalf("capToolResult() = %q, want hey", got)
+	}
+	if truncated {
+		t.Fatal("capToolResult() truncated short output")
 	}
 }
 
 func TestCapToolResultTruncatesLongOutput(t *testing.T) {
 	a := &Agent{toolResultCap: 5}
-	got := a.capToolResult("hello world")
+	got, truncated := a.capToolResult("hello world")
+	if !truncated {
+		t.Fatal("capToolResult() did not report truncation")
+	}
 	wantSuffix := fmt.Sprintf("[tool result truncated: %d bytes omitted]", 6)
 	if !strings.HasPrefix(got, "hello\n\n") {
 		t.Fatalf("capToolResult() = %q, want hello prefix", got)
 	}
 	if !strings.Contains(got, wantSuffix) {
 		t.Fatalf("capToolResult() = %q, want suffix %q", got, wantSuffix)
+	}
+}
+
+type recordingLogger struct {
+	events []TurnEvent
+}
+
+func (l *recordingLogger) LogTurn(ctx context.Context, event TurnEvent) {
+	l.events = append(l.events, event)
+}
+
+type toolCallingProvider struct {
+	calls int
+}
+
+func (p *toolCallingProvider) Name() string { return "tool-calling" }
+
+func (p *toolCallingProvider) Complete(ctx context.Context, req *llm.Request) (*llm.Response, error) {
+	p.calls++
+	if p.calls == 1 {
+		return &llm.Response{Content: []llm.Block{{
+			Type:      llm.BlockToolUse,
+			ToolUseID: "tool-1",
+			ToolName:  "echo",
+		}}}, nil
+	}
+	return &llm.Response{Content: []llm.Block{{Type: llm.BlockText, Text: "done"}}}, nil
+}
+
+type echoTool struct{}
+
+func (echoTool) Name() string { return "echo" }
+
+func (echoTool) Description() string { return "echo" }
+
+func (echoTool) Schema() json.RawMessage { return json.RawMessage(`{"type":"object"}`) }
+
+func (echoTool) Run(ctx context.Context, input json.RawMessage) (string, error) {
+	return "hello world", nil
+}
+
+func TestChatLogsTurnEvent(t *testing.T) {
+	logger := &recordingLogger{}
+	reg := tool.NewRegistry()
+	reg.Register(echoTool{})
+	a, err := New(Options{
+		Name:          "test",
+		Model:         "test-model",
+		SystemPrompt:  "test",
+		Provider:      &toolCallingProvider{},
+		Tools:         reg,
+		ToolResultCap: 5,
+		Logger:        logger,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	reply, err := a.Chat(context.Background(), "lucas", "hello")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reply != "done" {
+		t.Fatalf("reply = %q, want done", reply)
+	}
+	if len(logger.events) != 1 {
+		t.Fatalf("events = %#v, want one event", logger.events)
+	}
+	event := logger.events[0]
+	if event.Agent != "test" || event.UserID != "lucas" || event.Model != "test-model" {
+		t.Fatalf("event identity = %#v", event)
+	}
+	if event.FinishReason != "stop" {
+		t.Fatalf("finish reason = %q, want stop", event.FinishReason)
+	}
+	if event.Iterations != 2 {
+		t.Fatalf("iterations = %d, want 2", event.Iterations)
+	}
+	if len(event.Tools) != 1 || event.Tools[0] != "echo" {
+		t.Fatalf("tools = %#v, want echo", event.Tools)
+	}
+	if !event.Truncated {
+		t.Fatal("event did not report truncated tool result")
 	}
 }
 

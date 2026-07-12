@@ -71,6 +71,12 @@ vikusha chat writer
 
 Named agents get their own `workspace/`. Built-in file tools read from that workspace and reject paths outside it.
 
+For structured turn logs, pass `-log-json`:
+
+```bash
+vikusha chat -log-json writer
+```
+
 You can load the same YAML from Go.
 
 ```go

@@ -19,6 +19,7 @@ type Options struct {
 	Tools         map[string]tool.Tool
 	Workspace     string
 	ToolResultCap int
+	Logger        agent.TurnLogger
 }
 
 func LoadAgent(path string, opts Options) (*agent.Agent, error) {
@@ -50,6 +51,7 @@ func NewAgent(c *character.Character, opts Options) (*agent.Agent, error) {
 		Tools:         reg,
 		Memory:        mem,
 		ToolResultCap: opts.ToolResultCap,
+		Logger:        opts.Logger,
 	})
 }
 
