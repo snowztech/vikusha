@@ -84,7 +84,7 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 ### Transports
 
 - [x] CLI REPL (`vikusha chat <char.yaml>`).
-- [ ] Named-agent CLI REPL (`vikusha chat <agent>`).
+- [x] Named-agent CLI REPL (`vikusha chat <agent>`).
 
 ### Observability
 
@@ -95,7 +95,7 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 ### CLI
 
 - [x] `vikusha run <char.yaml>`: start an agent.
-- [ ] `vikusha start <char.yaml>`: preferred alias for starting an agent.
+- [x] `vikusha start <char.yaml>`: preferred alias for starting an agent.
 - [ ] `vikusha start <agent>`: start a named always-on agent.
 - [x] `vikusha chat <char.yaml>`: interactive terminal session.
 - [x] `vikusha version`.
