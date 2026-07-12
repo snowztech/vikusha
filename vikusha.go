@@ -8,6 +8,8 @@ import (
 	"github.com/snowztech/vikusha/core/agent"
 	"github.com/snowztech/vikusha/core/character"
 	"github.com/snowztech/vikusha/core/llm"
+	"github.com/snowztech/vikusha/core/memory"
+	filememory "github.com/snowztech/vikusha/core/memory/file"
 	"github.com/snowztech/vikusha/core/tool"
 	"github.com/snowztech/vikusha/core/tools/file"
 )
@@ -34,12 +36,17 @@ func NewAgent(c *character.Character, opts Options) (*agent.Agent, error) {
 	if err != nil {
 		return nil, err
 	}
+	mem, err := buildMemory(c)
+	if err != nil {
+		return nil, err
+	}
 	return agent.New(agent.Options{
 		Name:         c.Name,
 		Model:        c.Model,
 		SystemPrompt: c.SystemPrompt,
 		Provider:     p,
 		Tools:        reg,
+		Memory:       mem,
 	})
 }
 
@@ -66,6 +73,20 @@ func provider(c *character.Character, opts Options) (llm.Provider, error) {
 		return llm.NewOpenAI(apiKey), nil
 	default:
 		return nil, fmt.Errorf("unsupported provider %q", c.ProviderName())
+	}
+}
+
+func buildMemory(c *character.Character) (memory.Memory, error) {
+	switch c.MemoryBackend() {
+	case "":
+		return nil, nil
+	case "file":
+		if strings.TrimSpace(c.Memory.Path) == "" {
+			return nil, fmt.Errorf("memory.path is required for file backend")
+		}
+		return filememory.New(c.Memory.Path), nil
+	default:
+		return nil, fmt.Errorf("unsupported memory backend %q", c.Memory.Backend)
 	}
 }
 

@@ -56,6 +56,10 @@ func New(opts Options) (*Agent, error) {
 func (a *Agent) Name() string { return a.name }
 
 func (a *Agent) Chat(ctx context.Context, userID, msg string) (string, error) {
+	system, err := a.systemWithMemory(ctx, userID)
+	if err != nil {
+		return "", err
+	}
 	msgs := []llm.Message{
 		{Role: "user", Content: []llm.Block{{Type: llm.BlockText, Text: msg}}},
 	}
@@ -64,7 +68,7 @@ func (a *Agent) Chat(ctx context.Context, userID, msg string) (string, error) {
 	for range maxIterations {
 		resp, err := a.provider.Complete(ctx, &llm.Request{
 			Model:    a.model,
-			System:   a.systemPrompt,
+			System:   system,
 			Messages: msgs,
 			Tools:    tools,
 		})
@@ -87,6 +91,31 @@ func (a *Agent) Chat(ctx context.Context, userID, msg string) (string, error) {
 	}
 
 	return "", fmt.Errorf("agent: hit max iterations (%d)", maxIterations)
+}
+
+func (a *Agent) systemWithMemory(ctx context.Context, userID string) (string, error) {
+	if a.memory == nil {
+		return a.systemPrompt, nil
+	}
+	entries, err := a.memory.Search(ctx, userID, "", 20)
+	if err != nil {
+		return "", fmt.Errorf("memory: %w", err)
+	}
+	if len(entries) == 0 {
+		return a.systemPrompt, nil
+	}
+
+	var b strings.Builder
+	b.WriteString(a.systemPrompt)
+	b.WriteString("\n\nRelevant memory for this user:\n")
+	for i := len(entries) - 1; i >= 0; i-- {
+		b.WriteString("- ")
+		b.WriteString(string(entries[i].Type))
+		b.WriteString(": ")
+		b.WriteString(entries[i].Content)
+		b.WriteByte('\n')
+	}
+	return strings.TrimRight(b.String(), "\n"), nil
 }
 
 func (a *Agent) toolDefs() []llm.ToolDef {

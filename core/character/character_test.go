@@ -61,3 +61,16 @@ func TestOpenRouterDefaultAPIKeyEnv(t *testing.T) {
 		t.Fatalf("APIKeyEnv() = %q, want OPENROUTER_API_KEY", got)
 	}
 }
+
+func TestMemoryBackendValidation(t *testing.T) {
+	c := Character{
+		Name:         "Memory",
+		Model:        "gpt-4o-mini",
+		SystemPrompt: "Be useful.",
+		Memory:       MemoryConfig{Backend: "sqlite"},
+	}
+	errs := c.Validate()
+	if len(errs) != 1 || !strings.Contains(errs[0], "memory.backend") {
+		t.Fatalf("Validate() = %#v, want memory backend error", errs)
+	}
+}

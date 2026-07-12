@@ -13,6 +13,7 @@ type Character struct {
 	Model        string         `yaml:"model"`
 	SystemPrompt string         `yaml:"system_prompt"`
 	Provider     ProviderConfig `yaml:"provider"`
+	Memory       MemoryConfig   `yaml:"memory"`
 	Tools        []string       `yaml:"tools"`
 }
 
@@ -20,6 +21,11 @@ type ProviderConfig struct {
 	Name      string `yaml:"name"`
 	APIKeyEnv string `yaml:"api_key_env"`
 	BaseURL   string `yaml:"base_url"`
+}
+
+type MemoryConfig struct {
+	Backend string `yaml:"backend"`
+	Path    string `yaml:"path"`
 }
 
 func Load(path string) (*Character, error) {
@@ -52,12 +58,19 @@ func (c Character) Validate() []string {
 	if c.Provider.Name != "" && providerName(c.Provider.Name) == "" {
 		errs = append(errs, fmt.Sprintf("provider.name %q is not supported", c.Provider.Name))
 	}
+	if c.Memory.Backend != "" && memoryBackend(c.Memory.Backend) == "" {
+		errs = append(errs, fmt.Sprintf("memory.backend %q is not supported", c.Memory.Backend))
+	}
 	for _, t := range c.Tools {
 		if strings.TrimSpace(t) == "" {
 			errs = append(errs, "tools cannot contain empty names")
 		}
 	}
 	return errs
+}
+
+func (c Character) MemoryBackend() string {
+	return memoryBackend(c.Memory.Backend)
 }
 
 func (c Character) ProviderName() string {
@@ -70,6 +83,17 @@ func (c Character) ProviderName() string {
 		return "anthropic"
 	default:
 		return "openai"
+	}
+}
+
+func memoryBackend(name string) string {
+	switch strings.ToLower(strings.TrimSpace(name)) {
+	case "":
+		return ""
+	case "file":
+		return "file"
+	default:
+		return ""
 	}
 }
 
