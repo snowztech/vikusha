@@ -71,7 +71,7 @@ vikusha chat writer
 
 Named agents get their own `workspace/`. Built-in file tools read from that workspace and reject paths outside it.
 
-For structured turn logs, pass `-log-json`:
+For structured turn logs, pass `-log-json`. Named agents append logs to `~/.vikusha/agents/<name>/logs/turns.jsonl`; path-based agents write logs to stderr.
 
 ```bash
 vikusha chat -log-json writer

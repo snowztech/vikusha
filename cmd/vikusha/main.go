@@ -72,11 +72,26 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 		if fs.NArg() != 1 {
 			return fmt.Errorf("usage: vikusha %s <character.yaml|agent>", args[0])
 		}
-		var logger agent.TurnLogger
-		if *logJSON {
-			logger = agent.NewJSONLogger(stderr)
+		input := fs.Arg(0)
+		path, err := resolveCharacterPath(input)
+		if err != nil {
+			return err
 		}
-		a, err := buildAgent(fs.Arg(0), logger)
+		var logger agent.TurnLogger
+		var logFile *os.File
+		if *logJSON {
+			logWriter := stderr
+			if namedAgentInput(input) {
+				logFile, err = openTurnLog(path)
+				if err != nil {
+					return err
+				}
+				defer logFile.Close()
+				logWriter = logFile
+			}
+			logger = agent.NewJSONLogger(logWriter)
+		}
+		a, err := buildAgent(path, logger)
 		if err != nil {
 			return err
 		}
@@ -118,11 +133,10 @@ func createAgent(name string, opts createOptions) (string, error) {
 		return "", fmt.Errorf("agent %q already exists at %s", agentName, characterPath)
 	}
 	agentDir := filepath.Dir(characterPath)
-	if err := os.MkdirAll(filepath.Join(agentDir, "memory"), 0o700); err != nil {
-		return "", err
-	}
-	if err := os.MkdirAll(filepath.Join(agentDir, "workspace"), 0o700); err != nil {
-		return "", err
+	for _, dir := range []string{"memory", "workspace", "logs"} {
+		if err := os.MkdirAll(filepath.Join(agentDir, dir), 0o700); err != nil {
+			return "", err
+		}
 	}
 	memoryPath := filepath.Join(agentDir, "memory")
 	if err := os.WriteFile(characterPath, []byte(characterYAML(agentName, opts, memoryPath)), 0o600); err != nil {
@@ -186,15 +200,24 @@ func defaultAPIKeyEnv(provider string) string {
 	}
 }
 
-func buildAgent(input string, logger agent.TurnLogger) (*agent.Agent, error) {
-	path, err := resolveCharacterPath(input)
-	if err != nil {
-		return nil, err
-	}
+func buildAgent(path string, logger agent.TurnLogger) (*agent.Agent, error) {
 	return vikusha.LoadAgent(path, vikusha.Options{
 		Workspace: workspaceForCharacter(path),
 		Logger:    logger,
 	})
+}
+
+func namedAgentInput(input string) bool {
+	trimmed := strings.TrimSpace(input)
+	return trimmed != "" && !fileExists(trimmed) && !looksLikePath(trimmed)
+}
+
+func openTurnLog(characterPath string) (*os.File, error) {
+	logDir := filepath.Join(filepath.Dir(characterPath), "logs")
+	if err := os.MkdirAll(logDir, 0o700); err != nil {
+		return nil, err
+	}
+	return os.OpenFile(filepath.Join(logDir, "turns.jsonl"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
 }
 
 func workspaceForCharacter(path string) string {

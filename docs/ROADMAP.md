@@ -63,7 +63,7 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 ### Per-agent workspace
 
 - [x] Each agent owns `~/.vikusha/agents/<name>/` with its own character, memory directory, and workspace directory.
-- [ ] Per-agent logs under `~/.vikusha/agents/<name>/logs`.
+- [x] Per-agent logs under `~/.vikusha/agents/<name>/logs`.
 - [x] File tools default-scoped to the agent's workspace.
 - [ ] Paths outside the workspace require explicit approval, persisted per agent.
 - [x] Path resolution blocks `..` escapes and symlinks pointing outside the workspace.

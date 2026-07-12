@@ -63,7 +63,7 @@ func TestCreateAgent(t *testing.T) {
 			t.Fatalf("expected %q in character.yaml:\n%s", want, content)
 		}
 	}
-	for _, dir := range []string{"memory", "workspace"} {
+	for _, dir := range []string{"memory", "workspace", "logs"} {
 		if _, err := os.Stat(filepath.Join(home, ".vikusha", "agents", "writer", dir)); err != nil {
 			t.Fatalf("expected %s directory: %v", dir, err)
 		}
@@ -178,5 +178,39 @@ func TestWorkspaceForCharacterReturnsEmptyWhenMissing(t *testing.T) {
 	got := workspaceForCharacter(filepath.Join(t.TempDir(), "character.yaml"))
 	if got != "" {
 		t.Fatalf("workspaceForCharacter() = %q, want empty", got)
+	}
+}
+
+func TestNamedAgentInput(t *testing.T) {
+	if !namedAgentInput("writer") {
+		t.Fatal("expected bare agent name to be named input")
+	}
+	for _, input := range []string{"./writer.yaml", "/tmp/writer.yaml", "writer.yaml"} {
+		if namedAgentInput(input) {
+			t.Fatalf("expected %q to be path input", input)
+		}
+	}
+}
+
+func TestOpenTurnLogCreatesLogFile(t *testing.T) {
+	characterPath := filepath.Join(t.TempDir(), "writer", "character.yaml")
+	f, err := openTurnLog(characterPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.WriteString("{}\n"); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	logPath := filepath.Join(filepath.Dir(characterPath), "logs", "turns.jsonl")
+	data, err := os.ReadFile(logPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "{}\n" {
+		t.Fatalf("log file = %q, want json line", data)
 	}
 }
