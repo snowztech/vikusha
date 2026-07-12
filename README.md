@@ -11,36 +11,13 @@
     </p>
 </div>
 
-An assistant has personality, tools, memory, and a transport. You can build one in Go, define one in YAML, and run it from the terminal today.
+An assistant has personality, tools, memory, and a transport. You define one in YAML, run it from the terminal today, and later attach transports like Discord or Slack. Same binary, different YAMLs: a coding assistant, a support bot, an ops assistant.
 
 ## What is Vikusha?
 
-Vikusha is the harness your assistants run on. It handles the agent loop, provider calls, tool execution, memory, and transport wiring.
+Vikusha is the harness your assistants run on. It handles the agent loop, context engineering, prompt caching, memory, tool execution, and transport wiring. You write the character YAML, the harness does the rest.
 
-You can use it in two ways:
-
-- **As a Go framework**: import Vikusha, create an agent with `agent.New`, register tools, and call `Chat`.
-- **As a runtime**: write a character YAML and run it with the `vikusha` CLI.
-
-## North Star
-
-The goal is always-on assistants: define an assistant once, then run it wherever people need it.
-
-Today that starts with:
-
-```bash
-vikusha chat character.yaml
-```
-
-The long-term shape is named agents:
-
-```bash
-vikusha create writer
-vikusha start writer
-vikusha chat writer
-```
-
-In that model, `writer` is backed by a character YAML and has its own tools, memory, workspace, logs, secrets, and transports.
+The long-term direction is always-on assistants: define an assistant once, then run it wherever people need it.
 
 - **Providers**: Anthropic, OpenAI-compatible, Ollama.
 - **Tools**: bash, file, web search, grep, glob.
@@ -127,6 +104,7 @@ See:
 
 ## Documentation
 
+- [NORTHSTAR.md](docs/NORTHSTAR.md): product direction and target experience.
 - [ARCHITECTURE.md](docs/ARCHITECTURE.md): core concepts, interfaces, directory layout.
 - [CHARACTER.md](docs/CHARACTER.md): full YAML spec with examples.
 - [ROADMAP.md](docs/ROADMAP.md): where we're headed.
