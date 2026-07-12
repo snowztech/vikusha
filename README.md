@@ -11,25 +11,50 @@
     </p>
 </div>
 
-An assistant has personality, tools, memory, and a transport. You define one in YAML, run it, and use it on Discord or Slack. Same binary, different YAMLs: a coding assistant, a support bot, a Discord bot. Vikusha ships with a default assistant ready to use.
+An assistant has personality, tools, memory, and a transport. You can build one in Go, define one in YAML, and run it from the terminal today.
 
 ## What is Vikusha?
 
-Vikusha is the harness your assistants run on. It handles the agent loop, context engineering, prompt caching, memory, tool execution, and transport wiring. You write the character YAML, the harness does the rest.
+Vikusha is the harness your assistants run on. It handles the agent loop, provider calls, tool execution, memory, and transport wiring.
+
+You can use it in two ways:
+
+- **As a Go framework**: import Vikusha, create an agent with `agent.New`, register tools, and call `Chat`.
+- **As a runtime**: write a character YAML and run it with the `vikusha` CLI.
+
+## North Star
+
+The goal is always-on assistants: define an assistant once, then run it wherever people need it.
+
+Today that starts with:
+
+```bash
+vikusha chat character.yaml
+```
+
+The long-term shape is named agents:
+
+```bash
+vikusha create writer
+vikusha start writer
+vikusha chat writer
+```
+
+In that model, `writer` is backed by a character YAML and has its own tools, memory, workspace, logs, secrets, and transports.
 
 - **Providers**: Anthropic, OpenAI-compatible, Ollama.
 - **Tools**: bash, file, web search, grep, glob.
 - **Memory**: file, SQLite, pgvector.
 - **Transports**: terminal, Discord, Slack, Telegram.
 - **Isolation**: separate workspace and secrets per assistant.
-- **Scaffolder**: `vikusha create name` spawns a new assistant.
+- **Scaffolder**: `vikusha create writer` creates a named assistant.
 - **Observability**: structured logs, tokens, cost, duration.
 
 ---
 
 ## Quickstart
 
-### Option 1: run an agent from YAML
+### Option 1: YAML
 
 Create `character.yaml`.
 
@@ -55,7 +80,7 @@ a, err := vikusha.LoadAgent("character.yaml", vikusha.Options{})
 reply, err := a.Chat(ctx, "lucas", "hello")
 ```
 
-### Option 2: create an agent in Go
+### Option 2: Go
 
 Use `agent.New` when you want to pass the provider and tools yourself.
 

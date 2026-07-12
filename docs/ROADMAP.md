@@ -1,5 +1,23 @@
 # Roadmap
 
+## North star
+
+Vikusha is a Go framework and runtime for always-on AI assistants.
+
+The framework path is for Go developers: import Vikusha, wire providers and tools, and call `agent.Chat(ctx, userID, msg)`.
+
+The runtime path is for configured assistants: define a named agent in YAML, give it memory, tools, workspace, and transports, then start it as a long-running process.
+
+The target experience is:
+
+```bash
+vikusha create writer
+vikusha start writer
+vikusha chat writer
+```
+
+In that model, `writer` is backed by a character YAML under `~/.vikusha/agents/writer/`, with its own memory, workspace, logs, secrets, and transports.
+
 Priorities for the framework, grouped by what ships first.
 
 - **Now**: what blocks a usable v0.1.
@@ -65,6 +83,7 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 ### Transports
 
 - [x] CLI REPL (`vikusha chat <char.yaml>`).
+- [ ] Named-agent CLI REPL (`vikusha chat <agent>`).
 
 ### Observability
 
@@ -75,6 +94,8 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 ### CLI
 
 - [x] `vikusha run <char.yaml>`: start an agent.
+- [ ] `vikusha start <char.yaml>`: preferred alias for starting an agent.
+- [ ] `vikusha start <agent>`: start a named always-on agent.
 - [x] `vikusha chat <char.yaml>`: interactive terminal session.
 - [x] `vikusha version`.
 
@@ -91,6 +112,7 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 ### v0.3: scaffolding new agents
 
 - [ ] `vikusha create <name>` scaffolds a new agent from a template.
+- [ ] Created agents are stored under `~/.vikusha/agents/<name>/`.
 - [ ] Built-in templates: `personal`, `support`, `dev`.
 - [ ] Generated output: `main.go`, `character.yaml`, `.env.example`, `Makefile`.
 - [ ] `vikusha build <dir>` wraps `go build` so non-Go users get one command.
@@ -122,7 +144,7 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 
 - [ ] Install script (`curl ... | sh`).
 - [ ] systemd service template for Linux VPS deploys.
-- [ ] `vikusha logs`, `vikusha status`, `vikusha stop`.
+- [ ] `vikusha logs <agent>`, `vikusha status <agent>`, `vikusha stop <agent>`.
 - [ ] GitHub releases with prebuilt binaries for common platforms.
 
 ## Later
