@@ -160,3 +160,23 @@ func TestResolveCharacterPathReportsMissingNamedAgent(t *testing.T) {
 		t.Fatalf("expected agent path in error, got %q", err.Error())
 	}
 }
+
+func TestWorkspaceForCharacterUsesSiblingWorkspace(t *testing.T) {
+	dir := t.TempDir()
+	workspace := filepath.Join(dir, "workspace")
+	if err := os.Mkdir(workspace, 0o700); err != nil {
+		t.Fatal(err)
+	}
+
+	got := workspaceForCharacter(filepath.Join(dir, "character.yaml"))
+	if got != workspace {
+		t.Fatalf("workspaceForCharacter() = %q, want %q", got, workspace)
+	}
+}
+
+func TestWorkspaceForCharacterReturnsEmptyWhenMissing(t *testing.T) {
+	got := workspaceForCharacter(filepath.Join(t.TempDir(), "character.yaml"))
+	if got != "" {
+		t.Fatalf("workspaceForCharacter() = %q, want empty", got)
+	}
+}

@@ -184,7 +184,17 @@ func buildAgent(input string) (*agent.Agent, error) {
 	if err != nil {
 		return nil, err
 	}
-	return vikusha.LoadAgent(path, vikusha.Options{})
+	return vikusha.LoadAgent(path, vikusha.Options{
+		Workspace: workspaceForCharacter(path),
+	})
+}
+
+func workspaceForCharacter(path string) string {
+	workspace := filepath.Join(filepath.Dir(path), "workspace")
+	if fileExists(workspace) {
+		return workspace
+	}
+	return ""
 }
 
 func resolveCharacterPath(input string) (string, error) {
