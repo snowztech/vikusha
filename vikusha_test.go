@@ -65,7 +65,7 @@ memory:
 	}
 }
 
-func TestRegistryScopesBuiltInFileReadToWorkspace(t *testing.T) {
+func TestRegistryScopesBuiltInFileToolsToWorkspace(t *testing.T) {
 	base := t.TempDir()
 	workspace := filepath.Join(base, "workspace")
 	if err := os.Mkdir(workspace, 0o700); err != nil {
@@ -78,10 +78,23 @@ func TestRegistryScopesBuiltInFileReadToWorkspace(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	reg, err := registry([]string{"file_read"}, Options{Workspace: workspace})
+	reg, err := registry([]string{"file_list", "file_read"}, Options{Workspace: workspace})
 	if err != nil {
 		t.Fatal(err)
 	}
+	list, ok := reg.Get("file_list")
+	if !ok {
+		t.Fatal("file_list not registered")
+	}
+	if got, err := list.Run(context.Background(), mustJSON(t, map[string]string{"path": "."})); err != nil {
+		t.Fatal(err)
+	} else if !strings.Contains(got, "note.txt") {
+		t.Fatalf("file_list = %q, want note.txt", got)
+	}
+	if _, err := list.Run(context.Background(), mustJSON(t, map[string]string{"path": "../secret.txt"})); err == nil {
+		t.Fatal("expected workspace escape error from file_list")
+	}
+
 	read, ok := reg.Get("file_read")
 	if !ok {
 		t.Fatal("file_read not registered")

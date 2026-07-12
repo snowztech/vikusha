@@ -84,6 +84,7 @@ Use `agent.New` when you want to pass the provider and tools yourself.
 
 ```go
 reg := tool.NewRegistry()
+reg.Register(file.NewList())
 reg.Register(file.NewRead())
 
 a, err := agent.New(agent.Options{
@@ -113,6 +114,7 @@ memory:
   backend: file
   path: .vikusha/helper/memory
 tools:
+  - file_list
   - file_read
 ```
 
@@ -122,7 +124,7 @@ See:
 
 - [examples/from_yaml](examples/from_yaml): create an agent from YAML.
 - [examples/hello](examples/hello): create the smallest agent with `agent.New`.
-- [examples/file_read](examples/file_read): create an agent with a registered tool.
+- [examples/file_read](examples/file_read): create an agent with registered file tools.
 
 ---
 

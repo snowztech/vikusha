@@ -56,7 +56,7 @@ func TestCreateAgent(t *testing.T) {
 		"name: writer",
 		"model: gpt-4o-mini",
 		"api_key_env: OPENAI_API_KEY",
-		"tools: []",
+		"tools:\n  - file_list\n  - file_read",
 		filepath.ToSlash(filepath.Join(home, ".vikusha", "agents", "writer", "memory")),
 	} {
 		if !strings.Contains(content, want) {
