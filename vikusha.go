@@ -15,9 +15,10 @@ import (
 )
 
 type Options struct {
-	Env       func(string) string
-	Tools     map[string]tool.Tool
-	Workspace string
+	Env           func(string) string
+	Tools         map[string]tool.Tool
+	Workspace     string
+	ToolResultCap int
 }
 
 func LoadAgent(path string, opts Options) (*agent.Agent, error) {
@@ -42,12 +43,13 @@ func NewAgent(c *character.Character, opts Options) (*agent.Agent, error) {
 		return nil, err
 	}
 	return agent.New(agent.Options{
-		Name:         c.Name,
-		Model:        c.Model,
-		SystemPrompt: c.SystemPrompt,
-		Provider:     p,
-		Tools:        reg,
-		Memory:       mem,
+		Name:          c.Name,
+		Model:         c.Model,
+		SystemPrompt:  c.SystemPrompt,
+		Provider:      p,
+		Tools:         reg,
+		Memory:        mem,
+		ToolResultCap: opts.ToolResultCap,
 	})
 }
 

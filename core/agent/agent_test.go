@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"testing"
@@ -32,6 +33,14 @@ func (m memoryStub) Search(ctx context.Context, userID, query string, k int) ([]
 		return m.entries[:k], nil
 	}
 	return m.entries, nil
+}
+
+type staticProvider struct{}
+
+func (staticProvider) Name() string { return "static" }
+
+func (staticProvider) Complete(ctx context.Context, req *llm.Request) (*llm.Response, error) {
+	return &llm.Response{Content: []llm.Block{{Type: llm.BlockText, Text: "ok"}}}, nil
 }
 
 func TestSystemWithMemoryAppendsEntries(t *testing.T) {
@@ -68,6 +77,39 @@ func TestSystemWithMemoryNoEntriesUsesBasePrompt(t *testing.T) {
 	}
 	if system != "Base." {
 		t.Fatalf("system = %q, want base prompt", system)
+	}
+}
+
+func TestNewDefaultsToolResultCap(t *testing.T) {
+	a, err := New(Options{
+		Name:     "test",
+		Model:    "test-model",
+		Provider: staticProvider{},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a.toolResultCap != defaultToolResultCap {
+		t.Fatalf("toolResultCap = %d, want %d", a.toolResultCap, defaultToolResultCap)
+	}
+}
+
+func TestCapToolResultLeavesShortOutput(t *testing.T) {
+	a := &Agent{toolResultCap: 5}
+	if got := a.capToolResult("hey"); got != "hey" {
+		t.Fatalf("capToolResult() = %q, want hey", got)
+	}
+}
+
+func TestCapToolResultTruncatesLongOutput(t *testing.T) {
+	a := &Agent{toolResultCap: 5}
+	got := a.capToolResult("hello world")
+	wantSuffix := fmt.Sprintf("[tool result truncated: %d bytes omitted]", 6)
+	if !strings.HasPrefix(got, "hello\n\n") {
+		t.Fatalf("capToolResult() = %q, want hello prefix", got)
+	}
+	if !strings.Contains(got, wantSuffix) {
+		t.Fatalf("capToolResult() = %q, want suffix %q", got, wantSuffix)
 	}
 }
 

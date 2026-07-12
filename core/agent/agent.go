@@ -9,26 +9,31 @@ import (
 	"github.com/snowztech/vikusha/core/tool"
 )
 
-const maxIterations = 10
+const (
+	maxIterations        = 10
+	defaultToolResultCap = 4000
+)
 
 type Agent struct {
-	name         string
-	model        string
-	systemPrompt string
-	provider     llm.Provider
-	tools        *tool.Registry
-	memory       memory.Memory
-	turnsMu      sync.Mutex
-	userTurns    map[string]chan struct{}
+	name          string
+	model         string
+	systemPrompt  string
+	provider      llm.Provider
+	tools         *tool.Registry
+	memory        memory.Memory
+	toolResultCap int
+	turnsMu       sync.Mutex
+	userTurns     map[string]chan struct{}
 }
 
 type Options struct {
-	Name         string
-	Model        string
-	SystemPrompt string
-	Provider     llm.Provider
-	Tools        *tool.Registry
-	Memory       memory.Memory
+	Name          string
+	Model         string
+	SystemPrompt  string
+	Provider      llm.Provider
+	Tools         *tool.Registry
+	Memory        memory.Memory
+	ToolResultCap int
 }
 
 func New(opts Options) (*Agent, error) {
@@ -44,14 +49,18 @@ func New(opts Options) (*Agent, error) {
 	if opts.Tools == nil {
 		opts.Tools = tool.NewRegistry()
 	}
+	if opts.ToolResultCap <= 0 {
+		opts.ToolResultCap = defaultToolResultCap
+	}
 	return &Agent{
-		name:         opts.Name,
-		model:        opts.Model,
-		systemPrompt: opts.SystemPrompt,
-		provider:     opts.Provider,
-		tools:        opts.Tools,
-		memory:       opts.Memory,
-		userTurns:    map[string]chan struct{}{},
+		name:          opts.Name,
+		model:         opts.Model,
+		systemPrompt:  opts.SystemPrompt,
+		provider:      opts.Provider,
+		tools:         opts.Tools,
+		memory:        opts.Memory,
+		toolResultCap: opts.ToolResultCap,
+		userTurns:     map[string]chan struct{}{},
 	}, nil
 }
 

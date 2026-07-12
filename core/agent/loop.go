@@ -135,7 +135,14 @@ func (a *Agent) runTool(ctx context.Context, call llm.Block) (out llm.Block) {
 	if err != nil {
 		return errResult(call.ToolUseID, err.Error())
 	}
-	return llm.Block{Type: llm.BlockToolResult, ToolUseID: call.ToolUseID, Text: output}
+	return llm.Block{Type: llm.BlockToolResult, ToolUseID: call.ToolUseID, Text: a.capToolResult(output)}
+}
+
+func (a *Agent) capToolResult(output string) string {
+	if a.toolResultCap <= 0 || len(output) <= a.toolResultCap {
+		return output
+	}
+	return output[:a.toolResultCap] + fmt.Sprintf("\n\n[tool result truncated: %d bytes omitted]", len(output)-a.toolResultCap)
 }
 
 func splitBlocks(blocks []llm.Block) (string, []llm.Block) {
