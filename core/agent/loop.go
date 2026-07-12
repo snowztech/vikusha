@@ -53,6 +53,7 @@ func (a *Agent) Chat(ctx context.Context, userID, msg string) (string, error) {
 			event.Error = fmt.Sprintf("provider: %v", err)
 			return "", fmt.Errorf("provider: %w", err)
 		}
+		event.addUsage(resp.Usage)
 
 		text, toolCalls := splitBlocks(resp.Content)
 		if len(toolCalls) == 0 {

@@ -91,7 +91,8 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 ### Observability
 
 - [x] Structured JSON log line per turn: tools used, duration, loop iterations, finish reason, errors.
-- [ ] Token, cache-hit, and cost fields in turn logs.
+- [x] Token and cache fields in turn logs.
+- [ ] Cost fields in turn logs.
 - [ ] Colored terminal logger for interactive sessions.
 - [ ] Cost estimation per provider and model.
 
