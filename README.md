@@ -65,8 +65,7 @@ vikusha chat character.yaml
 Named agents are loaded from `~/.vikusha/agents/<name>/character.yaml`.
 
 ```bash
-mkdir -p ~/.vikusha/agents/writer
-cp character.yaml ~/.vikusha/agents/writer/character.yaml
+vikusha create writer
 vikusha chat writer
 ```
 

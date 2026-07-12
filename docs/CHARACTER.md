@@ -21,6 +21,13 @@ Run it with:
 vikusha chat character.yaml
 ```
 
+Or create a named agent:
+
+```bash
+vikusha create helper
+vikusha chat helper
+```
+
 ## Current Schema
 
 ```yaml

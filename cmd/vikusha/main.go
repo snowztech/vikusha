@@ -38,6 +38,28 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	case "version":
 		fmt.Fprintln(stdout, version)
 		return nil
+	case "create":
+		fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
+		fs.SetOutput(stderr)
+		model := fs.String("model", "gpt-4o-mini", "model id for the agent")
+		provider := fs.String("provider", "openai", "provider name")
+		apiKeyEnv := fs.String("api-key-env", "", "environment variable containing the provider API key")
+		if err := fs.Parse(args[1:]); err != nil {
+			return err
+		}
+		if fs.NArg() != 1 {
+			return fmt.Errorf("usage: vikusha create <agent>")
+		}
+		path, err := createAgent(fs.Arg(0), createOptions{
+			Model:     *model,
+			Provider:  *provider,
+			APIKeyEnv: *apiKeyEnv,
+		})
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(stdout, "created %s\n", path)
+		return nil
 	case "chat", "run", "start":
 		fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
 		fs.SetOutput(stderr)
@@ -63,9 +85,98 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 func usage(w io.Writer) {
 	fmt.Fprintln(w, "usage:")
 	fmt.Fprintln(w, "  vikusha chat <character.yaml|agent>")
+	fmt.Fprintln(w, "  vikusha create <agent>")
 	fmt.Fprintln(w, "  vikusha run <character.yaml|agent>")
 	fmt.Fprintln(w, "  vikusha start <character.yaml|agent>")
 	fmt.Fprintln(w, "  vikusha version")
+}
+
+type createOptions struct {
+	Model     string
+	Provider  string
+	APIKeyEnv string
+}
+
+func createAgent(name string, opts createOptions) (string, error) {
+	agentName := strings.TrimSpace(name)
+	if !validAgentName(agentName) {
+		return "", fmt.Errorf("agent name must be a simple name")
+	}
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("find home directory: %w", err)
+	}
+
+	characterPath := namedAgentCharacterPath(home, agentName)
+	if fileExists(characterPath) {
+		return "", fmt.Errorf("agent %q already exists at %s", agentName, characterPath)
+	}
+	agentDir := filepath.Dir(characterPath)
+	if err := os.MkdirAll(filepath.Join(agentDir, "memory"), 0o700); err != nil {
+		return "", err
+	}
+	if err := os.MkdirAll(filepath.Join(agentDir, "workspace"), 0o700); err != nil {
+		return "", err
+	}
+	memoryPath := filepath.Join(agentDir, "memory")
+	if err := os.WriteFile(characterPath, []byte(characterYAML(agentName, opts, memoryPath)), 0o600); err != nil {
+		return "", err
+	}
+	return characterPath, nil
+}
+
+func validAgentName(name string) bool {
+	if name == "" {
+		return false
+	}
+	for _, r := range name {
+		if r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-' || r == '_' {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+func characterYAML(name string, opts createOptions, memoryPath string) string {
+	model := strings.TrimSpace(opts.Model)
+	if model == "" {
+		model = "gpt-4o-mini"
+	}
+	provider := strings.TrimSpace(opts.Provider)
+	if provider == "" {
+		provider = "openai"
+	}
+	apiKeyEnv := strings.TrimSpace(opts.APIKeyEnv)
+	if apiKeyEnv == "" {
+		apiKeyEnv = defaultAPIKeyEnv(provider)
+	}
+
+	return fmt.Sprintf(`name: %s
+model: %s
+system_prompt: You are %s, a concise and helpful assistant.
+provider:
+  name: %s
+  api_key_env: %s
+memory:
+  backend: file
+  path: %s
+tools: []
+`, name, model, name, provider, apiKeyEnv, filepath.ToSlash(memoryPath))
+}
+
+func defaultAPIKeyEnv(provider string) string {
+	switch strings.ToLower(strings.TrimSpace(provider)) {
+	case "anthropic":
+		return "ANTHROPIC_API_KEY"
+	case "openrouter":
+		return "OPENROUTER_API_KEY"
+	case "groq":
+		return "GROQ_API_KEY"
+	default:
+		return "OPENAI_API_KEY"
+	}
 }
 
 func buildAgent(input string) (*agent.Agent, error) {
