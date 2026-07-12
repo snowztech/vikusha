@@ -173,7 +173,7 @@ func TestRegistryScopesBuiltInFileToolsToWorkspace(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	reg, err := registry([]string{"file_list", "file_read"}, BuildOptions{Workspace: workspace})
+	reg, err := registry([]string{"file_list", "file_read", "file_edit"}, BuildOptions{Workspace: workspace})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -204,6 +204,22 @@ func TestRegistryScopesBuiltInFileToolsToWorkspace(t *testing.T) {
 	}
 	if _, err := read.Run(context.Background(), mustJSON(t, map[string]string{"path": "../secret.txt"})); err == nil {
 		t.Fatal("expected workspace escape error")
+	}
+
+	edit, ok := reg.Get("file_edit")
+	if !ok {
+		t.Fatal("file_edit not registered")
+	}
+	if _, err := edit.Run(context.Background(), mustJSON(t, map[string]any{"path": "new.txt", "content": "new"})); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := os.ReadFile(filepath.Join(workspace, "new.txt")); err != nil {
+		t.Fatal(err)
+	} else if string(got) != "new" {
+		t.Fatalf("file_edit wrote %q, want new", got)
+	}
+	if _, err := edit.Run(context.Background(), mustJSON(t, map[string]any{"path": "../secret.txt", "content": "oops"})); err == nil {
+		t.Fatal("expected workspace escape error from file_edit")
 	}
 }
 

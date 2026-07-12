@@ -134,6 +134,7 @@ func registry(names []string, opts BuildOptions) (*tool.Registry, error) {
 	available := map[string]tool.Tool{
 		"file_list": file.NewList(opts.Workspace),
 		"file_read": file.NewRead(opts.Workspace),
+		"file_edit": file.NewEdit(opts.Workspace),
 	}
 	for name, t := range opts.AvailableTools {
 		available[name] = t

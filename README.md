@@ -116,6 +116,7 @@ context:
 tools:
   - file_list
   - file_read
+  - file_edit
 tool_config:
   file_read:
     timeout: 5s
