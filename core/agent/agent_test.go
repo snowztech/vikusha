@@ -321,3 +321,55 @@ func TestChatWaitForUserTurnRespectsContext(t *testing.T) {
 		t.Fatalf("first Chat returned error: %v", err)
 	}
 }
+
+func TestCancelReturnsFalseWithoutActiveTurn(t *testing.T) {
+	a, err := New(Options{
+		Name:     "test",
+		Model:    "test-model",
+		Provider: staticProvider{},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a.Cancel("lucas") {
+		t.Fatal("Cancel returned true without active turn")
+	}
+}
+
+func TestCancelActiveTurn(t *testing.T) {
+	provider := &blockingProvider{
+		entered: make(chan struct{}),
+		release: make(chan struct{}),
+	}
+	a, err := New(Options{
+		Name:         "test",
+		Model:        "test-model",
+		SystemPrompt: "test",
+		Provider:     provider,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	done := make(chan error, 1)
+	go func() {
+		_, err := a.Chat(context.Background(), "lucas", "hello")
+		done <- err
+	}()
+
+	<-provider.entered
+	if !a.Cancel("lucas") {
+		t.Fatal("Cancel returned false for active turn")
+	}
+
+	err = <-done
+	if err == nil {
+		t.Fatal("expected canceled turn error")
+	}
+	if !strings.Contains(err.Error(), context.Canceled.Error()) {
+		t.Fatalf("error = %q, want context canceled", err)
+	}
+	if a.Cancel("lucas") {
+		t.Fatal("Cancel returned true after turn finished")
+	}
+}

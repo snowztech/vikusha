@@ -82,6 +82,10 @@ You can load the same YAML from Go.
 ```go
 a, err := vikusha.LoadAgent("character.yaml", vikusha.Options{})
 reply, err := a.Chat(ctx, "lucas", "hello")
+_ = reply
+
+// From another goroutine or transport command:
+a.Cancel("lucas")
 ```
 
 ### Option 2: Go
@@ -102,7 +106,7 @@ a, err := agent.New(agent.Options{
 })
 ```
 
-Both paths return an `*agent.Agent`; call `Chat(ctx, userID, msg)` to run a turn.
+Both paths return an `*agent.Agent`; call `Chat(ctx, userID, msg)` to run a turn and `Cancel(userID)` to stop that user's active turn.
 
 ## Character YAML
 

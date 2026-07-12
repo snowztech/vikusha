@@ -33,7 +33,7 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 - [x] `agent.Chat(ctx, userID, msg)` as the single entry point.
 - [x] Tool-call loop with a hard iteration cap.
 - [x] Per-user serialization so one user's turn cannot interleave with itself.
-- [ ] Cancellation via context, surfaced through a per-user cancel handle.
+- [x] Cancellation via context, surfaced through a per-user cancel handle.
 - [x] Panic recovery around tool execution.
 
 ### Providers

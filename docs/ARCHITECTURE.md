@@ -44,7 +44,7 @@ YAML file defining an assistant's identity and runtime config. Loaded once at st
 
 ### Agent
 
-The runtime core. Holds the assistant name, model, system prompt, LLM provider, tool registry, and optional memory backend. Exposes one method: `Chat(ctx, userID, msg) -> (string, error)`.
+The runtime core. Holds the assistant name, model, system prompt, LLM provider, tool registry, and optional memory backend. Exposes `Chat(ctx, userID, msg) -> (string, error)` to run a turn and `Cancel(userID) -> bool` to stop that user's active turn.
 
 ### Tool
 
