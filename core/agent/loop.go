@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/snowztech/vikusha/core/llm"
 )
@@ -19,8 +20,19 @@ func (a *Agent) Chat(ctx context.Context, userID, msg string) (string, error) {
 	}
 	defer release()
 
+	start := time.Now()
+	event := turnEvent(start, a.name, userID, a.model)
+	defer func() {
+		duration := time.Since(start)
+		event.Duration = duration.String()
+		event.DurationMS = duration.Milliseconds()
+		a.logTurn(ctx, event)
+	}()
+
 	system, err := a.systemWithMemory(ctx, userID)
 	if err != nil {
+		event.FinishReason = "error"
+		event.Error = err.Error()
 		return "", err
 	}
 	msgs := []llm.Message{
@@ -28,7 +40,8 @@ func (a *Agent) Chat(ctx context.Context, userID, msg string) (string, error) {
 	}
 	tools := a.toolDefs()
 
-	for range maxIterations {
+	for i := range maxIterations {
+		event.Iterations = i + 1
 		resp, err := a.provider.Complete(ctx, &llm.Request{
 			Model:    a.model,
 			System:   system,
@@ -36,11 +49,14 @@ func (a *Agent) Chat(ctx context.Context, userID, msg string) (string, error) {
 			Tools:    tools,
 		})
 		if err != nil {
+			event.FinishReason = "error"
+			event.Error = fmt.Sprintf("provider: %v", err)
 			return "", fmt.Errorf("provider: %w", err)
 		}
 
 		text, toolCalls := splitBlocks(resp.Content)
 		if len(toolCalls) == 0 {
+			event.FinishReason = "stop"
 			return text, nil
 		}
 
@@ -48,12 +64,27 @@ func (a *Agent) Chat(ctx context.Context, userID, msg string) (string, error) {
 
 		results := make([]llm.Block, 0, len(toolCalls))
 		for _, call := range toolCalls {
-			results = append(results, a.runTool(ctx, call))
+			result, truncated := a.runTool(ctx, call)
+			results = append(results, result)
+			event.Tools = append(event.Tools, call.ToolName)
+			event.Truncated = event.Truncated || truncated
 		}
 		msgs = append(msgs, llm.Message{Role: "user", Content: results})
 	}
 
+	event.FinishReason = "max_iterations"
+	event.Error = fmt.Sprintf("agent: hit max iterations (%d)", maxIterations)
 	return "", fmt.Errorf("agent: hit max iterations (%d)", maxIterations)
+}
+
+func (a *Agent) logTurn(ctx context.Context, event TurnEvent) {
+	if a.logger == nil {
+		return
+	}
+	if event.FinishReason == "" {
+		event.FinishReason = "unknown"
+	}
+	a.logger.LogTurn(ctx, event)
 }
 
 func (a *Agent) acquireUserTurn(ctx context.Context, userID string) (func(), error) {
@@ -120,7 +151,7 @@ func (a *Agent) toolDefs() []llm.ToolDef {
 	return defs
 }
 
-func (a *Agent) runTool(ctx context.Context, call llm.Block) (out llm.Block) {
+func (a *Agent) runTool(ctx context.Context, call llm.Block) (out llm.Block, truncated bool) {
 	defer func() {
 		if r := recover(); r != nil {
 			out = errResult(call.ToolUseID, fmt.Sprintf("tool panic: %v", r))
@@ -129,20 +160,21 @@ func (a *Agent) runTool(ctx context.Context, call llm.Block) (out llm.Block) {
 
 	t, ok := a.tools.Get(call.ToolName)
 	if !ok {
-		return errResult(call.ToolUseID, fmt.Sprintf("tool not found: %s", call.ToolName))
+		return errResult(call.ToolUseID, fmt.Sprintf("tool not found: %s", call.ToolName)), false
 	}
 	output, err := t.Run(ctx, call.ToolInput)
 	if err != nil {
-		return errResult(call.ToolUseID, err.Error())
+		return errResult(call.ToolUseID, err.Error()), false
 	}
-	return llm.Block{Type: llm.BlockToolResult, ToolUseID: call.ToolUseID, Text: a.capToolResult(output)}
+	text, truncated := a.capToolResult(output)
+	return llm.Block{Type: llm.BlockToolResult, ToolUseID: call.ToolUseID, Text: text}, truncated
 }
 
-func (a *Agent) capToolResult(output string) string {
+func (a *Agent) capToolResult(output string) (string, bool) {
 	if a.toolResultCap <= 0 || len(output) <= a.toolResultCap {
-		return output
+		return output, false
 	}
-	return output[:a.toolResultCap] + fmt.Sprintf("\n\n[tool result truncated: %d bytes omitted]", len(output)-a.toolResultCap)
+	return output[:a.toolResultCap] + fmt.Sprintf("\n\n[tool result truncated: %d bytes omitted]", len(output)-a.toolResultCap), true
 }
 
 func splitBlocks(blocks []llm.Block) (string, []llm.Block) {

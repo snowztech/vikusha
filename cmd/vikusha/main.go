@@ -65,13 +65,18 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 		fs.SetOutput(stderr)
 		userID := fs.String("user", os.Getenv("USER"), "user id for the conversation")
 		timeout := fs.Duration("timeout", 2*time.Minute, "timeout per turn")
+		logJSON := fs.Bool("log-json", false, "write structured turn logs to stderr")
 		if err := fs.Parse(args[1:]); err != nil {
 			return err
 		}
 		if fs.NArg() != 1 {
 			return fmt.Errorf("usage: vikusha %s <character.yaml|agent>", args[0])
 		}
-		a, err := buildAgent(fs.Arg(0))
+		var logger agent.TurnLogger
+		if *logJSON {
+			logger = agent.NewJSONLogger(stderr)
+		}
+		a, err := buildAgent(fs.Arg(0), logger)
 		if err != nil {
 			return err
 		}
@@ -181,13 +186,14 @@ func defaultAPIKeyEnv(provider string) string {
 	}
 }
 
-func buildAgent(input string) (*agent.Agent, error) {
+func buildAgent(input string, logger agent.TurnLogger) (*agent.Agent, error) {
 	path, err := resolveCharacterPath(input)
 	if err != nil {
 		return nil, err
 	}
 	return vikusha.LoadAgent(path, vikusha.Options{
 		Workspace: workspaceForCharacter(path),
+		Logger:    logger,
 	})
 }
 

@@ -1,8 +1,10 @@
 package agent
 
 import (
+	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/snowztech/vikusha/core/llm"
 	"github.com/snowztech/vikusha/core/memory"
@@ -22,6 +24,7 @@ type Agent struct {
 	tools         *tool.Registry
 	memory        memory.Memory
 	toolResultCap int
+	logger        TurnLogger
 	turnsMu       sync.Mutex
 	userTurns     map[string]chan struct{}
 }
@@ -34,6 +37,24 @@ type Options struct {
 	Tools         *tool.Registry
 	Memory        memory.Memory
 	ToolResultCap int
+	Logger        TurnLogger
+}
+
+type TurnLogger interface {
+	LogTurn(ctx context.Context, event TurnEvent)
+}
+
+type TurnEvent struct {
+	Agent        string   `json:"agent"`
+	UserID       string   `json:"user_id"`
+	Model        string   `json:"model"`
+	Duration     string   `json:"duration"`
+	DurationMS   int64    `json:"duration_ms"`
+	Iterations   int      `json:"iterations"`
+	Tools        []string `json:"tools,omitempty"`
+	Error        string   `json:"error,omitempty"`
+	Truncated    bool     `json:"truncated,omitempty"`
+	FinishReason string   `json:"finish_reason"`
 }
 
 func New(opts Options) (*Agent, error) {
@@ -60,8 +81,20 @@ func New(opts Options) (*Agent, error) {
 		tools:         opts.Tools,
 		memory:        opts.Memory,
 		toolResultCap: opts.ToolResultCap,
+		logger:        opts.Logger,
 		userTurns:     map[string]chan struct{}{},
 	}, nil
 }
 
 func (a *Agent) Name() string { return a.name }
+
+func turnEvent(start time.Time, agent, userID, model string) TurnEvent {
+	duration := time.Since(start)
+	return TurnEvent{
+		Agent:      agent,
+		UserID:     userID,
+		Model:      model,
+		Duration:   duration.String(),
+		DurationMS: duration.Milliseconds(),
+	}
+}
