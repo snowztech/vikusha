@@ -1,11 +1,9 @@
 package llm
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 )
 
@@ -50,25 +48,12 @@ func (o *OpenAICompat) Complete(ctx context.Context, req *Request) (*Response, e
 		return nil, fmt.Errorf("marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, o.baseURL+"/chat/completions", bytes.NewReader(body))
+	raw, err := postJSONWithRetry(ctx, o.http, o.baseURL+"/chat/completions", map[string]string{
+		"content-type":  "application/json",
+		"authorization": "Bearer " + o.apiKey,
+	}, body, "openai")
 	if err != nil {
 		return nil, err
-	}
-	httpReq.Header.Set("content-type", "application/json")
-	httpReq.Header.Set("authorization", "Bearer "+o.apiKey)
-
-	resp, err := o.http.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("http call: %w", err)
-	}
-	defer resp.Body.Close()
-
-	raw, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("read body: %w", err)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("openai %d: %s", resp.StatusCode, raw)
 	}
 
 	var wire openaiResp
