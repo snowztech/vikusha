@@ -236,11 +236,11 @@ func (p *toolCallingProvider) Complete(ctx context.Context, req *llm.Request) (*
 			Type:      llm.BlockToolUse,
 			ToolUseID: "tool-1",
 			ToolName:  "echo",
-		}}, Usage: llm.Usage{InputTokens: 10, OutputTokens: 2, CacheReadTokens: 3}}, nil
+		}}, Usage: llm.Usage{InputTokens: 10, OutputTokens: 2, CacheReadTokens: 3, ReasoningOutputTokens: 1}}, nil
 	}
 	return &llm.Response{
 		Content: []llm.Block{{Type: llm.BlockText, Text: "done"}},
-		Usage:   llm.Usage{InputTokens: 12, OutputTokens: 4, CacheWriteTokens: 5},
+		Usage:   llm.Usage{InputTokens: 12, OutputTokens: 4, CacheWriteTokens: 5, ReasoningOutputTokens: 2},
 	}, nil
 }
 
@@ -304,6 +304,9 @@ func TestChatLogsTurnEvent(t *testing.T) {
 	}
 	if event.CacheReadTokens != 3 || event.CacheWriteTokens != 5 {
 		t.Fatalf("cache tokens = read %d write %d, want 3/5", event.CacheReadTokens, event.CacheWriteTokens)
+	}
+	if event.ReasoningTokens != 3 {
+		t.Fatalf("reasoning tokens = %d, want 3", event.ReasoningTokens)
 	}
 }
 

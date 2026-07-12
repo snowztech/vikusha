@@ -107,9 +107,19 @@ type openaiResp struct {
 		FinishReason string        `json:"finish_reason"`
 	} `json:"choices"`
 	Usage struct {
-		PromptTokens     int `json:"prompt_tokens"`
-		CompletionTokens int `json:"completion_tokens"`
+		PromptTokens         int                           `json:"prompt_tokens"`
+		CompletionTokens     int                           `json:"completion_tokens"`
+		PromptTokensDetails  openaiPromptTokensDetails     `json:"prompt_tokens_details"`
+		CompletionTokensInfo openaiCompletionTokensDetails `json:"completion_tokens_details"`
 	} `json:"usage"`
+}
+
+type openaiPromptTokensDetails struct {
+	CachedTokens int `json:"cached_tokens"`
+}
+
+type openaiCompletionTokensDetails struct {
+	ReasoningTokens int `json:"reasoning_tokens"`
 }
 
 func toOpenAIReq(r *Request) openaiReq {
@@ -187,8 +197,10 @@ func encodeOpenAIMessage(m Message) []openaiMessage {
 func fromOpenAIResp(w *openaiResp) *Response {
 	out := &Response{
 		Usage: Usage{
-			InputTokens:  w.Usage.PromptTokens,
-			OutputTokens: w.Usage.CompletionTokens,
+			InputTokens:           w.Usage.PromptTokens,
+			OutputTokens:          w.Usage.CompletionTokens,
+			CacheReadTokens:       w.Usage.PromptTokensDetails.CachedTokens,
+			ReasoningOutputTokens: w.Usage.CompletionTokensInfo.ReasoningTokens,
 		},
 	}
 	if len(w.Choices) == 0 {

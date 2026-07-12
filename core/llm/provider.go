@@ -53,8 +53,9 @@ type Response struct {
 }
 
 type Usage struct {
-	InputTokens      int
-	OutputTokens     int
-	CacheReadTokens  int
-	CacheWriteTokens int
+	InputTokens           int
+	OutputTokens          int
+	CacheReadTokens       int
+	CacheWriteTokens      int
+	ReasoningOutputTokens int
 }
