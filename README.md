@@ -31,6 +31,13 @@ The long-term direction is always-on assistants: define an assistant once, then 
 
 ## Quickstart
 
+Install the CLI:
+
+```bash
+go install github.com/snowztech/vikusha/cmd/vikusha@latest
+vikusha version
+```
+
 ### Option 1: YAML
 
 Create `character.yaml`.
@@ -45,7 +52,6 @@ provider:
 ```
 
 ```bash
-go install github.com/snowztech/vikusha/cmd/vikusha@latest
 export OPENAI_API_KEY=...
 vikusha chat character.yaml
 ```
@@ -107,6 +113,7 @@ See:
 - [NORTHSTAR.md](docs/NORTHSTAR.md): product direction and target experience.
 - [ARCHITECTURE.md](docs/ARCHITECTURE.md): core concepts, interfaces, directory layout.
 - [CHARACTER.md](docs/CHARACTER.md): full YAML spec with examples.
+- [RELEASING.md](docs/RELEASING.md): release and install process.
 - [ROADMAP.md](docs/ROADMAP.md): where we're headed.
 
 ---
