@@ -14,23 +14,28 @@ import (
 	"github.com/snowztech/vikusha/core/tools/file"
 )
 
-type Options struct {
-	Env           func(string) string
-	Tools         map[string]tool.Tool
-	Workspace     string
-	ToolResultCap int
-	Logger        agent.TurnLogger
+// BuildOptions controls how Vikusha wires character YAML into a runtime agent.
+//
+// The character file describes the assistant. BuildOptions describes the host
+// process: env lookup, custom tool implementations, workspace, logging, and
+// runtime limits.
+type BuildOptions struct {
+	Env            func(string) string
+	AvailableTools map[string]tool.Tool
+	Workspace      string
+	ToolResultCap  int
+	Logger         agent.TurnLogger
 }
 
-func LoadAgent(path string, opts Options) (*agent.Agent, error) {
+func LoadAgent(path string, opts BuildOptions) (*agent.Agent, error) {
 	c, err := character.Load(path)
 	if err != nil {
 		return nil, err
 	}
-	return NewAgent(c, opts)
+	return newAgent(c, opts)
 }
 
-func NewAgent(c *character.Character, opts Options) (*agent.Agent, error) {
+func newAgent(c *character.Character, opts BuildOptions) (*agent.Agent, error) {
 	p, err := provider(c, opts)
 	if err != nil {
 		return nil, err
@@ -55,7 +60,7 @@ func NewAgent(c *character.Character, opts Options) (*agent.Agent, error) {
 	})
 }
 
-func provider(c *character.Character, opts Options) (llm.Provider, error) {
+func provider(c *character.Character, opts BuildOptions) (llm.Provider, error) {
 	lookup := opts.Env
 	if lookup == nil {
 		lookup = os.Getenv
@@ -95,13 +100,13 @@ func buildMemory(c *character.Character) (memory.Memory, error) {
 	}
 }
 
-func registry(names []string, opts Options) (*tool.Registry, error) {
+func registry(names []string, opts BuildOptions) (*tool.Registry, error) {
 	reg := tool.NewRegistry()
 	available := map[string]tool.Tool{
 		"file_list": file.NewList(opts.Workspace),
 		"file_read": file.NewRead(opts.Workspace),
 	}
-	for name, t := range opts.Tools {
+	for name, t := range opts.AvailableTools {
 		available[name] = t
 	}
 

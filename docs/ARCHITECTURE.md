@@ -10,19 +10,18 @@ This document describes Vikusha's target architecture. When a concept is not imp
 4. **Flat conceptual model.** Tools, transports, memory backends, and LLM providers are distinct, named concepts.
 5. **Character as data.** A YAML file is the entire assistant definition. Same binary, different YAML = different assistant.
 6. **Observability over magic.** The user should be able to see which tool ran, which model was called, and which memory was injected.
-7. **Two modes of use.** Go framework for developers who embed Vikusha, YAML runtime for configured assistants.
+7. **Character-first creation.** A character definition is built into the agent runtime. YAML is the normal user-facing format.
 
 ## Target System Flow
 
-Vikusha has two entry paths that meet at the same agent loop:
+Vikusha's normal path is character YAML into the agent loop:
 
 ```mermaid
 flowchart LR
     yaml[character.yaml] --> loader[character loader]
     cli[vikusha CLI] --> loader
-    app[Go app] --> manual[agent.New options]
     loader --> build[provider + tools + memory]
-    manual --> build
+    manual[advanced agent.New] --> agent[Agent]
     build --> agent[Agent]
     transport[CLI / future transports] --> chat[agent.Chat(ctx, userID, msg)]
     agent --> chat
@@ -34,7 +33,7 @@ flowchart LR
     tools -- no --> reply[reply]
 ```
 
-The framework path is explicit Go construction: the caller passes providers, tools, and memory. The runtime path starts from YAML and lets Vikusha wire those pieces. Both paths produce the same `Agent` runtime.
+The primary path is character-first: YAML describes the assistant, and Vikusha wires providers, tools, memory, workspace, and logging. The lower-level `agent.New` path remains available for advanced Go users who want to pass runtime dependencies themselves.
 
 ## Core concepts
 

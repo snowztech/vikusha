@@ -44,7 +44,7 @@ Go users can also install from source:
 go install github.com/snowztech/vikusha/cmd/vikusha@latest
 ```
 
-### Option 1: YAML
+### Character YAML
 
 Create `character.yaml`.
 
@@ -77,10 +77,10 @@ For structured turn logs, pass `-log-json`. Named agents append logs to `~/.viku
 vikusha chat -log-json writer
 ```
 
-You can load the same YAML from Go.
+You can load the same character from Go.
 
 ```go
-a, err := vikusha.LoadAgent("character.yaml", vikusha.Options{})
+a, err := vikusha.LoadAgent("character.yaml", vikusha.BuildOptions{})
 reply, err := a.Chat(ctx, "lucas", "hello")
 _ = reply
 
@@ -88,27 +88,9 @@ _ = reply
 a.Cancel("lucas")
 ```
 
-### Option 2: Go
+For advanced Go usage where you want to wire provider instances, tool registries, or memory yourself, use `agent.New`; see [examples/file_read](examples/file_read).
 
-Use `agent.New` when you want to pass the provider and tools yourself.
-
-```go
-reg := tool.NewRegistry()
-reg.Register(file.NewList())
-reg.Register(file.NewRead())
-
-a, err := agent.New(agent.Options{
-	Name:         "Helper",
-	Model:        "gpt-4o-mini",
-	SystemPrompt: "You are helpful.",
-	Provider:     llm.NewOpenAI(os.Getenv("OPENAI_API_KEY")),
-	Tools:        reg,
-})
-```
-
-Both paths return an `*agent.Agent`; call `Chat(ctx, userID, msg)` to run a turn and `Cancel(userID)` to stop that user's active turn.
-
-## Character YAML
+## YAML Fields
 
 The fields implemented today are:
 
@@ -133,8 +115,8 @@ If `provider` is omitted, Vikusha infers Anthropic for models beginning with `cl
 See:
 
 - [examples/from_yaml](examples/from_yaml): create an agent from YAML.
-- [examples/hello](examples/hello): create the smallest agent with `agent.New`.
-- [examples/file_read](examples/file_read): create an agent with registered file tools.
+- [examples/hello](examples/hello): load a character and run one turn.
+- [examples/file_read](examples/file_read): advanced manual construction with registered file tools.
 
 ---
 

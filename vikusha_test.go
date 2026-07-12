@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/snowztech/vikusha/core/character"
+	"github.com/snowztech/vikusha/core/tool"
 )
 
 func TestLoadAgentFromCharacter(t *testing.T) {
@@ -21,7 +24,7 @@ tools:
 		t.Fatal(err)
 	}
 
-	a, err := LoadAgent(path, Options{
+	a, err := LoadAgent(path, BuildOptions{
 		Env: func(name string) string {
 			if name == "OPENAI_API_KEY" {
 				return "test-key"
@@ -37,6 +40,69 @@ tools:
 	}
 }
 
+func TestBuildAgentFromCharacter(t *testing.T) {
+	a, err := newAgent(&character.Character{
+		Name:         "Helper",
+		Model:        "gpt-4o-mini",
+		SystemPrompt: "Be useful.",
+		Provider: character.ProviderConfig{
+			Name:      "openai",
+			APIKeyEnv: "OPENAI_API_KEY",
+		},
+		Tools: []string{"file_list", "file_read"},
+	}, BuildOptions{
+		Env: func(name string) string {
+			if name == "OPENAI_API_KEY" {
+				return "test-key"
+			}
+			return ""
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a.Name() != "Helper" {
+		t.Fatalf("agent name = %q, want Helper", a.Name())
+	}
+}
+
+type customTool struct{}
+
+func (customTool) Name() string { return "custom" }
+
+func (customTool) Description() string { return "custom tool" }
+
+func (customTool) Schema() json.RawMessage { return json.RawMessage(`{"type":"object"}`) }
+
+func (customTool) Run(ctx context.Context, input json.RawMessage) (string, error) {
+	return "ok", nil
+}
+
+func TestBuildAgentUsesAvailableTools(t *testing.T) {
+	a, err := newAgent(&character.Character{
+		Name:         "Helper",
+		Model:        "gpt-4o-mini",
+		SystemPrompt: "Be useful.",
+		Tools:        []string{"custom"},
+	}, BuildOptions{
+		Env: func(name string) string {
+			if name == "OPENAI_API_KEY" {
+				return "test-key"
+			}
+			return ""
+		},
+		AvailableTools: map[string]tool.Tool{
+			"custom": customTool{},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a.Name() != "Helper" {
+		t.Fatalf("agent name = %q, want Helper", a.Name())
+	}
+}
+
 func TestLoadAgentRequiresFileMemoryPath(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "character.yaml")
 	if err := os.WriteFile(path, []byte(`
@@ -49,7 +115,7 @@ memory:
 		t.Fatal(err)
 	}
 
-	_, err := LoadAgent(path, Options{
+	_, err := LoadAgent(path, BuildOptions{
 		Env: func(name string) string {
 			if name == "OPENAI_API_KEY" {
 				return "test-key"
@@ -78,7 +144,7 @@ func TestRegistryScopesBuiltInFileToolsToWorkspace(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	reg, err := registry([]string{"file_list", "file_read"}, Options{Workspace: workspace})
+	reg, err := registry([]string{"file_list", "file_read"}, BuildOptions{Workspace: workspace})
 	if err != nil {
 		t.Fatal(err)
 	}

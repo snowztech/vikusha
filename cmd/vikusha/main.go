@@ -201,7 +201,7 @@ func defaultAPIKeyEnv(provider string) string {
 }
 
 func buildAgent(path string, logger agent.TurnLogger) (*agent.Agent, error) {
-	return vikusha.LoadAgent(path, vikusha.Options{
+	return vikusha.LoadAgent(path, vikusha.BuildOptions{
 		Workspace: workspaceForCharacter(path),
 		Logger:    logger,
 	})
