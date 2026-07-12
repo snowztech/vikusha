@@ -45,16 +45,20 @@ type TurnLogger interface {
 }
 
 type TurnEvent struct {
-	Agent        string   `json:"agent"`
-	UserID       string   `json:"user_id"`
-	Model        string   `json:"model"`
-	Duration     string   `json:"duration"`
-	DurationMS   int64    `json:"duration_ms"`
-	Iterations   int      `json:"iterations"`
-	Tools        []string `json:"tools,omitempty"`
-	Error        string   `json:"error,omitempty"`
-	Truncated    bool     `json:"truncated,omitempty"`
-	FinishReason string   `json:"finish_reason"`
+	Agent            string   `json:"agent"`
+	UserID           string   `json:"user_id"`
+	Model            string   `json:"model"`
+	Duration         string   `json:"duration"`
+	DurationMS       int64    `json:"duration_ms"`
+	Iterations       int      `json:"iterations"`
+	InputTokens      int      `json:"input_tokens,omitempty"`
+	OutputTokens     int      `json:"output_tokens,omitempty"`
+	CacheReadTokens  int      `json:"cache_read_tokens,omitempty"`
+	CacheWriteTokens int      `json:"cache_write_tokens,omitempty"`
+	Tools            []string `json:"tools,omitempty"`
+	Error            string   `json:"error,omitempty"`
+	Truncated        bool     `json:"truncated,omitempty"`
+	FinishReason     string   `json:"finish_reason"`
 }
 
 func New(opts Options) (*Agent, error) {
@@ -97,4 +101,11 @@ func turnEvent(start time.Time, agent, userID, model string) TurnEvent {
 		Duration:   duration.String(),
 		DurationMS: duration.Milliseconds(),
 	}
+}
+
+func (e *TurnEvent) addUsage(usage llm.Usage) {
+	e.InputTokens += usage.InputTokens
+	e.OutputTokens += usage.OutputTokens
+	e.CacheReadTokens += usage.CacheReadTokens
+	e.CacheWriteTokens += usage.CacheWriteTokens
 }

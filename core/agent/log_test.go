@@ -18,6 +18,8 @@ func TestJSONLoggerWritesTurnEvent(t *testing.T) {
 		Duration:     "10ms",
 		DurationMS:   10,
 		Iterations:   2,
+		InputTokens:  20,
+		OutputTokens: 5,
 		Tools:        []string{"file_list"},
 		FinishReason: "stop",
 	})
@@ -28,5 +30,8 @@ func TestJSONLoggerWritesTurnEvent(t *testing.T) {
 	}
 	if got.Agent != "writer" || got.UserID != "lucas" || got.Tools[0] != "file_list" {
 		t.Fatalf("event = %#v", got)
+	}
+	if got.InputTokens != 20 || got.OutputTokens != 5 {
+		t.Fatalf("tokens = input %d output %d, want 20/5", got.InputTokens, got.OutputTokens)
 	}
 }

@@ -143,9 +143,12 @@ func (p *toolCallingProvider) Complete(ctx context.Context, req *llm.Request) (*
 			Type:      llm.BlockToolUse,
 			ToolUseID: "tool-1",
 			ToolName:  "echo",
-		}}}, nil
+		}}, Usage: llm.Usage{InputTokens: 10, OutputTokens: 2, CacheReadTokens: 3}}, nil
 	}
-	return &llm.Response{Content: []llm.Block{{Type: llm.BlockText, Text: "done"}}}, nil
+	return &llm.Response{
+		Content: []llm.Block{{Type: llm.BlockText, Text: "done"}},
+		Usage:   llm.Usage{InputTokens: 12, OutputTokens: 4, CacheWriteTokens: 5},
+	}, nil
 }
 
 type echoTool struct{}
@@ -202,6 +205,12 @@ func TestChatLogsTurnEvent(t *testing.T) {
 	}
 	if !event.Truncated {
 		t.Fatal("event did not report truncated tool result")
+	}
+	if event.InputTokens != 22 || event.OutputTokens != 6 {
+		t.Fatalf("tokens = input %d output %d, want 22/6", event.InputTokens, event.OutputTokens)
+	}
+	if event.CacheReadTokens != 3 || event.CacheWriteTokens != 5 {
+		t.Fatalf("cache tokens = read %d write %d, want 3/5", event.CacheReadTokens, event.CacheWriteTokens)
 	}
 }
 
