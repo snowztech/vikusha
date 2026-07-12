@@ -116,3 +116,37 @@ func TestMemoryBackendValidation(t *testing.T) {
 		t.Fatalf("Validate() = %#v, want memory backend error", errs)
 	}
 }
+
+func TestLoadContextConfig(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "character.yaml")
+	if err := os.WriteFile(path, []byte(`
+name: Helper
+model: gpt-4o-mini
+system_prompt: Be useful.
+context:
+  history_token_budget: 12000
+`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	c, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Context.HistoryTokenBudget != 12000 {
+		t.Fatalf("history_token_budget = %d, want 12000", c.Context.HistoryTokenBudget)
+	}
+}
+
+func TestContextValidation(t *testing.T) {
+	c := Character{
+		Name:         "Context",
+		Model:        "gpt-4o-mini",
+		SystemPrompt: "Be useful.",
+		Context:      ContextConfig{HistoryTokenBudget: -1},
+	}
+	errs := c.Validate()
+	if len(errs) != 1 || !strings.Contains(errs[0], "context.history_token_budget") {
+		t.Fatalf("Validate() = %#v, want context history budget error", errs)
+	}
+}

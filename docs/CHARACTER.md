@@ -44,6 +44,9 @@ memory:
   backend: file
   path: .vikusha/helper/memory
 
+context:
+  history_token_budget: 30000
+
 tools:
   - file_list
   - file_read
@@ -61,6 +64,8 @@ tools:
 
 `memory` is optional. The implemented backend today is `file`, backed by JSONL files at `memory.path`.
 
+`context` is optional. `history_token_budget` controls how much per-user in-process conversation history is sent with each turn. The default is 30000 estimated tokens. Durable memory is configured separately with `memory`.
+
 `tools` is optional. The implemented built-in tools today are `file_list` and `file_read`.
 
 ## Validation
@@ -77,4 +82,4 @@ Invalid config exits non-zero with a clear error.
 
 ## Target Runtime
 
-The roadmap adds named agents, transports, richer tool config, context budgets, logging, and RAG. Those fields are intentionally not accepted yet; they will be added to this schema as they become implemented.
+The roadmap adds named agents, transports, richer tool config, logging, and RAG. Those fields are intentionally not accepted yet; they will be added to this schema as they become implemented.

@@ -94,6 +94,9 @@ func TestNewDefaultsToolResultCap(t *testing.T) {
 	if a.toolResultCap != defaultToolResultCap {
 		t.Fatalf("toolResultCap = %d, want %d", a.toolResultCap, defaultToolResultCap)
 	}
+	if a.historyBudget != defaultHistoryTokenBudget {
+		t.Fatalf("historyBudget = %d, want %d", a.historyBudget, defaultHistoryTokenBudget)
+	}
 }
 
 func TestCapToolResultLeavesShortOutput(t *testing.T) {
@@ -372,4 +375,128 @@ func TestCancelActiveTurn(t *testing.T) {
 	if a.Cancel("lucas") {
 		t.Fatal("Cancel returned true after turn finished")
 	}
+}
+
+type historyProvider struct {
+	mu       sync.Mutex
+	replies  []string
+	requests [][]llm.Message
+}
+
+func (p *historyProvider) Name() string { return "history" }
+
+func (p *historyProvider) Complete(ctx context.Context, req *llm.Request) (*llm.Response, error) {
+	p.mu.Lock()
+	p.requests = append(p.requests, cloneMessages(req.Messages))
+	reply := "ok"
+	if len(p.replies) > 0 {
+		reply = p.replies[0]
+		p.replies = p.replies[1:]
+	}
+	p.mu.Unlock()
+
+	return &llm.Response{Content: []llm.Block{{Type: llm.BlockText, Text: reply}}}, nil
+}
+
+func TestChatCarriesHistoryForSameUser(t *testing.T) {
+	provider := &historyProvider{replies: []string{"first reply", "second reply"}}
+	a, err := New(Options{
+		Name:         "test",
+		Model:        "test-model",
+		SystemPrompt: "test",
+		Provider:     provider,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := a.Chat(context.Background(), "lucas", "first message"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.Chat(context.Background(), "lucas", "second message"); err != nil {
+		t.Fatal(err)
+	}
+
+	provider.mu.Lock()
+	defer provider.mu.Unlock()
+	if len(provider.requests) != 2 {
+		t.Fatalf("requests = %d, want 2", len(provider.requests))
+	}
+	got := messageTexts(provider.requests[1])
+	want := []string{"first message", "first reply", "second message"}
+	if strings.Join(got, "|") != strings.Join(want, "|") {
+		t.Fatalf("second request messages = %#v, want %#v", got, want)
+	}
+}
+
+func TestChatHistoryIsPerUser(t *testing.T) {
+	provider := &historyProvider{replies: []string{"lucas reply", "maya reply"}}
+	a, err := New(Options{
+		Name:         "test",
+		Model:        "test-model",
+		SystemPrompt: "test",
+		Provider:     provider,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := a.Chat(context.Background(), "lucas", "lucas message"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.Chat(context.Background(), "maya", "maya message"); err != nil {
+		t.Fatal(err)
+	}
+
+	provider.mu.Lock()
+	defer provider.mu.Unlock()
+	got := messageTexts(provider.requests[1])
+	want := []string{"maya message"}
+	if strings.Join(got, "|") != strings.Join(want, "|") {
+		t.Fatalf("second user messages = %#v, want %#v", got, want)
+	}
+}
+
+func TestChatTrimsHistoryByTokenBudget(t *testing.T) {
+	provider := &historyProvider{replies: []string{
+		strings.Repeat("b", 40),
+		"second reply",
+	}}
+	a, err := New(Options{
+		Name:               "test",
+		Model:              "test-model",
+		SystemPrompt:       "test",
+		Provider:           provider,
+		HistoryTokenBudget: 12,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := a.Chat(context.Background(), "lucas", strings.Repeat("a", 40)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.Chat(context.Background(), "lucas", "current"); err != nil {
+		t.Fatal(err)
+	}
+
+	provider.mu.Lock()
+	defer provider.mu.Unlock()
+	got := messageTexts(provider.requests[1])
+	want := []string{"current"}
+	if strings.Join(got, "|") != strings.Join(want, "|") {
+		t.Fatalf("trimmed messages = %#v, want %#v", got, want)
+	}
+}
+
+func messageTexts(msgs []llm.Message) []string {
+	var out []string
+	for _, msg := range msgs {
+		for _, block := range msg.Content {
+			if block.Type == llm.BlockText {
+				out = append(out, block.Text)
+			}
+		}
+	}
+	return out
 }

@@ -49,14 +49,15 @@ func newAgent(c *character.Character, opts BuildOptions) (*agent.Agent, error) {
 		return nil, err
 	}
 	return agent.New(agent.Options{
-		Name:          c.Name,
-		Model:         c.Model,
-		SystemPrompt:  c.SystemPrompt,
-		Provider:      p,
-		Tools:         reg,
-		Memory:        mem,
-		ToolResultCap: opts.ToolResultCap,
-		Logger:        opts.Logger,
+		Name:               c.Name,
+		Model:              c.Model,
+		SystemPrompt:       c.SystemPrompt,
+		Provider:           p,
+		Tools:              reg,
+		Memory:             mem,
+		ToolResultCap:      opts.ToolResultCap,
+		HistoryTokenBudget: c.Context.HistoryTokenBudget,
+		Logger:             opts.Logger,
 	})
 }
 
