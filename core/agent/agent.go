@@ -23,6 +23,7 @@ type Agent struct {
 	systemPrompt  string
 	provider      llm.Provider
 	tools         *tool.Registry
+	toolConfig    map[string]ToolConfig
 	memory        memory.Memory
 	toolResultCap int
 	historyBudget int
@@ -49,10 +50,16 @@ type Options struct {
 	SystemPrompt       string
 	Provider           llm.Provider
 	Tools              *tool.Registry
+	ToolConfig         map[string]ToolConfig
 	Memory             memory.Memory
 	ToolResultCap      int
 	HistoryTokenBudget int
 	Logger             TurnLogger
+}
+
+type ToolConfig struct {
+	Timeout   time.Duration
+	ResultCap int
 }
 
 type TurnLogger interface {
@@ -101,6 +108,7 @@ func New(opts Options) (*Agent, error) {
 		systemPrompt:  opts.SystemPrompt,
 		provider:      opts.Provider,
 		tools:         opts.Tools,
+		toolConfig:    cloneToolConfig(opts.ToolConfig),
 		memory:        opts.Memory,
 		toolResultCap: opts.ToolResultCap,
 		historyBudget: opts.HistoryTokenBudget,
@@ -109,6 +117,17 @@ func New(opts Options) (*Agent, error) {
 		userTurns:     map[string]chan struct{}{},
 		userCancels:   map[string]turnCancel{},
 	}, nil
+}
+
+func cloneToolConfig(in map[string]ToolConfig) map[string]ToolConfig {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make(map[string]ToolConfig, len(in))
+	for name, cfg := range in {
+		out[name] = cfg
+	}
+	return out
 }
 
 func (a *Agent) Name() string { return a.name }

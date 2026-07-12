@@ -193,19 +193,43 @@ func (a *Agent) runTool(ctx context.Context, call llm.Block) (out llm.Block, tru
 	if !ok {
 		return errResult(call.ToolUseID, fmt.Sprintf("tool not found: %s", call.ToolName)), false
 	}
+	cfg := a.configForTool(call.ToolName)
+	if cfg.Timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, cfg.Timeout)
+		defer cancel()
+	}
 	output, err := t.Run(ctx, call.ToolInput)
 	if err != nil {
 		return errResult(call.ToolUseID, err.Error()), false
 	}
-	text, truncated := a.capToolResult(output)
+	text, truncated := capToolResult(output, a.resultCapForTool(cfg))
 	return llm.Block{Type: llm.BlockToolResult, ToolUseID: call.ToolUseID, Text: text}, truncated
 }
 
 func (a *Agent) capToolResult(output string) (string, bool) {
-	if a.toolResultCap <= 0 || len(output) <= a.toolResultCap {
+	return capToolResult(output, a.toolResultCap)
+}
+
+func (a *Agent) configForTool(name string) ToolConfig {
+	if a.toolConfig == nil {
+		return ToolConfig{}
+	}
+	return a.toolConfig[name]
+}
+
+func (a *Agent) resultCapForTool(cfg ToolConfig) int {
+	if cfg.ResultCap > 0 {
+		return cfg.ResultCap
+	}
+	return a.toolResultCap
+}
+
+func capToolResult(output string, cap int) (string, bool) {
+	if cap <= 0 || len(output) <= cap {
 		return output, false
 	}
-	return output[:a.toolResultCap] + fmt.Sprintf("\n\n[tool result truncated: %d bytes omitted]", len(output)-a.toolResultCap), true
+	return output[:cap] + fmt.Sprintf("\n\n[tool result truncated: %d bytes omitted]", len(output)-cap), true
 }
 
 func splitBlocks(blocks []llm.Block) (string, []llm.Block) {

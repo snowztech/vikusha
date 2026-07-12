@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/snowztech/vikusha/core/character"
 	"github.com/snowztech/vikusha/core/tool"
@@ -128,6 +129,34 @@ memory:
 	}
 	if !strings.Contains(err.Error(), "memory.path") {
 		t.Fatalf("error = %q, want memory.path", err)
+	}
+}
+
+func TestAgentToolConfigConvertsCharacterToolConfig(t *testing.T) {
+	cfg, err := agentToolConfig(map[string]character.ToolConfig{
+		" file_read ": {Timeout: "2s", ResultCap: 8000},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := cfg["file_read"]
+	if got.Timeout != 2*time.Second {
+		t.Fatalf("timeout = %s, want 2s", got.Timeout)
+	}
+	if got.ResultCap != 8000 {
+		t.Fatalf("result cap = %d, want 8000", got.ResultCap)
+	}
+}
+
+func TestAgentToolConfigRejectsInvalidTimeout(t *testing.T) {
+	_, err := agentToolConfig(map[string]character.ToolConfig{
+		"file_read": {Timeout: "soon"},
+	})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "tool_config.file_read.timeout") {
+		t.Fatalf("error = %q, want tool_config timeout", err)
 	}
 }
 

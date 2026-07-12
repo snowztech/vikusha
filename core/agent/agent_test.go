@@ -125,6 +125,96 @@ func TestCapToolResultTruncatesLongOutput(t *testing.T) {
 	}
 }
 
+type outputTool struct {
+	name   string
+	output string
+}
+
+func (t outputTool) Name() string { return t.name }
+
+func (t outputTool) Description() string { return "output" }
+
+func (t outputTool) Schema() json.RawMessage { return json.RawMessage(`{"type":"object"}`) }
+
+func (t outputTool) Run(ctx context.Context, input json.RawMessage) (string, error) {
+	return t.output, nil
+}
+
+func TestRunToolUsesPerToolResultCap(t *testing.T) {
+	reg := tool.NewRegistry()
+	reg.Register(outputTool{name: "long", output: "hello world"})
+	a, err := New(Options{
+		Name:          "test",
+		Model:         "test-model",
+		Provider:      staticProvider{},
+		Tools:         reg,
+		ToolResultCap: 100,
+		ToolConfig: map[string]ToolConfig{
+			"long": {ResultCap: 5},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result, truncated := a.runTool(context.Background(), llm.Block{
+		Type:      llm.BlockToolUse,
+		ToolUseID: "tool-1",
+		ToolName:  "long",
+	})
+	if !truncated {
+		t.Fatal("runTool did not report truncation")
+	}
+	if !strings.HasPrefix(result.Text, "hello\n\n") {
+		t.Fatalf("tool result = %q, want hello prefix", result.Text)
+	}
+}
+
+type blockingTool struct{}
+
+func (blockingTool) Name() string { return "slow" }
+
+func (blockingTool) Description() string { return "slow" }
+
+func (blockingTool) Schema() json.RawMessage { return json.RawMessage(`{"type":"object"}`) }
+
+func (blockingTool) Run(ctx context.Context, input json.RawMessage) (string, error) {
+	<-ctx.Done()
+	return "", ctx.Err()
+}
+
+func TestRunToolUsesPerToolTimeout(t *testing.T) {
+	reg := tool.NewRegistry()
+	reg.Register(blockingTool{})
+	a, err := New(Options{
+		Name:     "test",
+		Model:    "test-model",
+		Provider: staticProvider{},
+		Tools:    reg,
+		ToolConfig: map[string]ToolConfig{
+			"slow": {Timeout: time.Millisecond},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result, truncated := a.runTool(context.Background(), llm.Block{
+		Type:      llm.BlockToolUse,
+		ToolUseID: "tool-1",
+		ToolName:  "slow",
+	})
+	if truncated {
+		t.Fatal("timeout result should not be marked truncated")
+	}
+	if !result.ToolError {
+		t.Fatal("timeout result should be marked as tool error")
+	}
+	if !strings.Contains(result.Text, context.DeadlineExceeded.Error()) {
+		t.Fatalf("timeout result = %q, want deadline exceeded", result.Text)
+	}
+}
+
 type recordingLogger struct {
 	events []TurnEvent
 }
