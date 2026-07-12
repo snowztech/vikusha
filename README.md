@@ -77,6 +77,12 @@ For structured turn logs, pass `-log-json`. Named agents append logs to `~/.viku
 vikusha chat -log-json writer
 ```
 
+For readable turn logs during a terminal session, pass `-log-terminal`.
+
+```bash
+vikusha chat -log-terminal writer
+```
+
 You can load the same character from Go.
 
 ```go

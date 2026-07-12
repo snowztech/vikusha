@@ -66,8 +66,13 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 		userID := fs.String("user", os.Getenv("USER"), "user id for the conversation")
 		timeout := fs.Duration("timeout", 2*time.Minute, "timeout per turn")
 		logJSON := fs.Bool("log-json", false, "write structured turn logs to stderr")
+		logTerminal := fs.Bool("log-terminal", false, "write human-readable turn logs to stderr")
+		noColor := fs.Bool("no-color", false, "disable color in terminal turn logs")
 		if err := fs.Parse(args[1:]); err != nil {
 			return err
+		}
+		if *logJSON && *logTerminal {
+			return fmt.Errorf("-log-json and -log-terminal cannot be used together")
 		}
 		if fs.NArg() != 1 {
 			return fmt.Errorf("usage: vikusha %s <character.yaml|agent>", args[0])
@@ -90,6 +95,8 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 				logWriter = logFile
 			}
 			logger = agent.NewJSONLogger(logWriter)
+		} else if *logTerminal {
+			logger = agent.NewTerminalLogger(stderr, !*noColor)
 		}
 		a, err := buildAgent(path, logger)
 		if err != nil {
