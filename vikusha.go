@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/snowztech/vikusha/core/agent"
 	"github.com/snowztech/vikusha/core/character"
@@ -48,17 +49,44 @@ func newAgent(c *character.Character, opts BuildOptions) (*agent.Agent, error) {
 	if err != nil {
 		return nil, err
 	}
+	toolConfig, err := agentToolConfig(c.ToolConfig)
+	if err != nil {
+		return nil, err
+	}
 	return agent.New(agent.Options{
 		Name:               c.Name,
 		Model:              c.Model,
 		SystemPrompt:       c.SystemPrompt,
 		Provider:           p,
 		Tools:              reg,
+		ToolConfig:         toolConfig,
 		Memory:             mem,
 		ToolResultCap:      opts.ToolResultCap,
 		HistoryTokenBudget: c.Context.HistoryTokenBudget,
 		Logger:             opts.Logger,
 	})
+}
+
+func agentToolConfig(config map[string]character.ToolConfig) (map[string]agent.ToolConfig, error) {
+	if len(config) == 0 {
+		return nil, nil
+	}
+	out := make(map[string]agent.ToolConfig, len(config))
+	for name, cfg := range config {
+		var timeout time.Duration
+		if strings.TrimSpace(cfg.Timeout) != "" {
+			var err error
+			timeout, err = time.ParseDuration(cfg.Timeout)
+			if err != nil {
+				return nil, fmt.Errorf("tool_config.%s.timeout is invalid: %w", strings.TrimSpace(name), err)
+			}
+		}
+		out[strings.TrimSpace(name)] = agent.ToolConfig{
+			Timeout:   timeout,
+			ResultCap: cfg.ResultCap,
+		}
+	}
+	return out, nil
 }
 
 func provider(c *character.Character, opts BuildOptions) (llm.Provider, error) {

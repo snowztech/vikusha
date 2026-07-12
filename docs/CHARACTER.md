@@ -50,6 +50,11 @@ context:
 tools:
   - file_list
   - file_read
+
+tool_config:
+  file_read:
+    timeout: 5s
+    result_cap: 8000
 ```
 
 ## Fields
@@ -67,6 +72,8 @@ tools:
 `context` is optional. `history_token_budget` controls how much per-user in-process conversation history is sent with each turn. The default is 30000 estimated tokens. Durable memory is configured separately with `memory`.
 
 `tools` is optional. The implemented built-in tools today are `file_list` and `file_read`.
+
+`tool_config` is optional. It configures enabled tools by name. `timeout` uses Go duration strings such as `5s`, `500ms`, or `1m`. `result_cap` limits how many bytes from that tool result are returned to the model before truncation.
 
 ## Validation
 

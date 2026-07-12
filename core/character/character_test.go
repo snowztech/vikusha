@@ -138,6 +138,56 @@ context:
 	}
 }
 
+func TestLoadToolConfig(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "character.yaml")
+	if err := os.WriteFile(path, []byte(`
+name: Helper
+model: gpt-4o-mini
+system_prompt: Be useful.
+tools:
+  - file_read
+tool_config:
+  file_read:
+    timeout: 5s
+    result_cap: 8000
+`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	c, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := c.ToolConfig["file_read"]
+	if cfg.Timeout != "5s" {
+		t.Fatalf("timeout = %q, want 5s", cfg.Timeout)
+	}
+	if cfg.ResultCap != 8000 {
+		t.Fatalf("result_cap = %d, want 8000", cfg.ResultCap)
+	}
+}
+
+func TestToolConfigValidation(t *testing.T) {
+	c := Character{
+		Name:         "Tools",
+		Model:        "gpt-4o-mini",
+		SystemPrompt: "Be useful.",
+		ToolConfig: map[string]ToolConfig{
+			"file_read": {Timeout: "soon", ResultCap: -1},
+		},
+	}
+	errs := c.Validate()
+	if len(errs) != 2 {
+		t.Fatalf("Validate() = %#v, want two errors", errs)
+	}
+	got := strings.Join(errs, "\n")
+	for _, want := range []string{"tool_config.file_read.timeout", "tool_config.file_read.result_cap"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("Validate() = %#v, want %q", errs, want)
+		}
+	}
+}
+
 func TestContextValidation(t *testing.T) {
 	c := Character{
 		Name:         "Context",

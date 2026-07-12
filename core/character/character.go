@@ -5,18 +5,20 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
 
 type Character struct {
-	Name         string         `yaml:"name"`
-	Model        string         `yaml:"model"`
-	SystemPrompt string         `yaml:"system_prompt"`
-	Provider     ProviderConfig `yaml:"provider"`
-	Memory       MemoryConfig   `yaml:"memory"`
-	Context      ContextConfig  `yaml:"context"`
-	Tools        []string       `yaml:"tools"`
+	Name         string                `yaml:"name"`
+	Model        string                `yaml:"model"`
+	SystemPrompt string                `yaml:"system_prompt"`
+	Provider     ProviderConfig        `yaml:"provider"`
+	Memory       MemoryConfig          `yaml:"memory"`
+	Context      ContextConfig         `yaml:"context"`
+	Tools        []string              `yaml:"tools"`
+	ToolConfig   map[string]ToolConfig `yaml:"tool_config"`
 }
 
 type ProviderConfig struct {
@@ -32,6 +34,11 @@ type MemoryConfig struct {
 
 type ContextConfig struct {
 	HistoryTokenBudget int `yaml:"history_token_budget"`
+}
+
+type ToolConfig struct {
+	Timeout   string `yaml:"timeout"`
+	ResultCap int    `yaml:"result_cap"`
 }
 
 func Load(path string) (*Character, error) {
@@ -71,6 +78,20 @@ func (c Character) Validate() []string {
 	}
 	if c.Context.HistoryTokenBudget < 0 {
 		errs = append(errs, "context.history_token_budget cannot be negative")
+	}
+	for name, cfg := range c.ToolConfig {
+		toolName := strings.TrimSpace(name)
+		if toolName == "" {
+			errs = append(errs, "tool_config cannot contain empty tool names")
+		}
+		if strings.TrimSpace(cfg.Timeout) != "" {
+			if _, err := time.ParseDuration(cfg.Timeout); err != nil {
+				errs = append(errs, fmt.Sprintf("tool_config.%s.timeout is invalid: %v", toolName, err))
+			}
+		}
+		if cfg.ResultCap < 0 {
+			errs = append(errs, fmt.Sprintf("tool_config.%s.result_cap cannot be negative", toolName))
+		}
 	}
 	for _, t := range c.Tools {
 		if strings.TrimSpace(t) == "" {
