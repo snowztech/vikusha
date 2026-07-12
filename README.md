@@ -34,8 +34,14 @@ The long-term direction is always-on assistants: define an assistant once, then 
 Install the CLI:
 
 ```bash
-go install github.com/snowztech/vikusha/cmd/vikusha@latest
+curl -sSL https://raw.githubusercontent.com/snowztech/vikusha/main/install.sh | bash
 vikusha version
+```
+
+Go users can also install from source:
+
+```bash
+go install github.com/snowztech/vikusha/cmd/vikusha@latest
 ```
 
 ### Option 1: YAML

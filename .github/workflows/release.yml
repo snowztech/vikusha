@@ -46,7 +46,7 @@ jobs:
               ext=".exe"
             fi
 
-            name="vikusha_${VERSION}_${os}_${arch}"
+            name="vikusha-${os}-${arch}"
             out="dist/${name}${ext}"
             GOOS="$os" GOARCH="$arch" go build \
               -trimpath \
