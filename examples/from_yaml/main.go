@@ -17,7 +17,7 @@ import (
 func main() {
 	_ = godotenv.Load()
 
-	a, err := vikusha.LoadAgent("examples/character.yaml", vikusha.Options{})
+	a, err := vikusha.LoadAgent("examples/character.yaml", vikusha.BuildOptions{})
 	if err != nil {
 		log.Fatal(err)
 	}

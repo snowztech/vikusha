@@ -1,5 +1,5 @@
-// file_read shows an agent using a tool. The agent is given the file_read
-// tool and asked a question that requires reading a file to answer.
+// file_read shows advanced manual construction. The agent is given file tools
+// directly and asked a question that requires reading a file to answer.
 //
 //	OPENROUTER_API_KEY=... go run ./examples/file_read
 package main
@@ -26,6 +26,7 @@ func main() {
 	}
 
 	reg := tool.NewRegistry()
+	reg.Register(file.NewList())
 	reg.Register(file.NewRead())
 
 	a, err := agent.New(agent.Options{

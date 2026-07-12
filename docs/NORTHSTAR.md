@@ -4,23 +4,9 @@ Vikusha is a Go framework and runtime for always-on AI assistants.
 
 The goal is simple: define an assistant once, then run it wherever people need it.
 
-## Two Paths
+## Core Idea
 
-### Go framework
-
-Go developers can import Vikusha, wire providers and tools, and call:
-
-```go
-reply, err := agent.Chat(ctx, userID, msg)
-```
-
-This path is for custom binaries, SaaS backends, internal tools, and tests.
-
-### YAML runtime
-
-Users can define an assistant in a character YAML and run it with the `vikusha` CLI.
-
-Today that starts with:
+Vikusha turns a character into a runnable agent. The normal user-facing character format is YAML:
 
 ```bash
 vikusha chat character.yaml
@@ -35,6 +21,8 @@ vikusha chat writer
 ```
 
 In that model, `writer` is backed by a character YAML and has its own tools, memory, workspace, logs, secrets, and transports.
+
+Go developers can load the same character from code, or use lower-level APIs when they need custom wiring.
 
 ## Always-On Assistants
 

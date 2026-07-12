@@ -1,5 +1,4 @@
-// hello shows the smallest possible vikusha agent: no tools, one turn,
-// answer a question.
+// hello shows the normal Go path: load a character YAML and run one turn.
 //
 //	OPENROUTER_API_KEY=... go run ./examples/hello
 package main
@@ -8,27 +7,15 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/snowztech/vikusha/core/agent"
-	"github.com/snowztech/vikusha/core/llm"
+	"github.com/snowztech/vikusha"
 )
 
 func main() {
 	_ = godotenv.Load()
-	apiKey := os.Getenv("OPENROUTER_API_KEY")
-	if apiKey == "" {
-		log.Fatal("OPENROUTER_API_KEY not set")
-	}
-
-	a, err := agent.New(agent.Options{
-		Name:         "hello",
-		Model:        "openai/gpt-4o-mini",
-		SystemPrompt: "You are a friendly assistant. Reply in one short sentence.",
-		Provider:     llm.NewOpenRouter(apiKey),
-	})
+	a, err := vikusha.LoadAgent("examples/character.yaml", vikusha.BuildOptions{})
 	if err != nil {
 		log.Fatal(err)
 	}

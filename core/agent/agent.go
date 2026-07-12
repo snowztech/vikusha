@@ -37,6 +37,8 @@ type turnCancel struct {
 	cancel context.CancelFunc
 }
 
+// Options contains the runtime dependencies required to construct an Agent
+// directly. Most users should prefer vikusha.LoadAgent or vikusha.NewAgent.
 type Options struct {
 	Name          string
 	Model         string
