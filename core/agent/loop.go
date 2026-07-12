@@ -20,6 +20,9 @@ func (a *Agent) Chat(ctx context.Context, userID, msg string) (string, error) {
 	}
 	defer release()
 
+	ctx, releaseCancel := a.acquireUserCancel(ctx, userID)
+	defer releaseCancel()
+
 	start := time.Now()
 	event := turnEvent(start, a.name, userID, a.model)
 	defer func() {
@@ -89,10 +92,7 @@ func (a *Agent) logTurn(ctx context.Context, event TurnEvent) {
 }
 
 func (a *Agent) acquireUserTurn(ctx context.Context, userID string) (func(), error) {
-	key := strings.TrimSpace(userID)
-	if key == "" {
-		key = "default"
-	}
+	key := userKey(userID)
 
 	// Each user gets a one-slot gate so concurrent transports cannot overlap
 	// turns for the same conversation context.
@@ -113,6 +113,37 @@ func (a *Agent) acquireUserTurn(ctx context.Context, userID string) (func(), err
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
+}
+
+func (a *Agent) acquireUserCancel(ctx context.Context, userID string) (context.Context, func()) {
+	key := userKey(userID)
+	turnCtx, cancel := context.WithCancel(ctx)
+
+	a.cancelMu.Lock()
+	if a.userCancels == nil {
+		a.userCancels = map[string]turnCancel{}
+	}
+	a.nextCancelID++
+	active := turnCancel{id: a.nextCancelID, cancel: cancel}
+	a.userCancels[key] = active
+	a.cancelMu.Unlock()
+
+	return turnCtx, func() {
+		cancel()
+		a.cancelMu.Lock()
+		if a.userCancels[key].id == active.id {
+			delete(a.userCancels, key)
+		}
+		a.cancelMu.Unlock()
+	}
+}
+
+func userKey(userID string) string {
+	key := strings.TrimSpace(userID)
+	if key == "" {
+		return "default"
+	}
+	return key
 }
 
 func (a *Agent) systemWithMemory(ctx context.Context, userID string) (string, error) {

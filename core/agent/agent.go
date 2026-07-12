@@ -27,6 +27,14 @@ type Agent struct {
 	logger        TurnLogger
 	turnsMu       sync.Mutex
 	userTurns     map[string]chan struct{}
+	cancelMu      sync.Mutex
+	nextCancelID  uint64
+	userCancels   map[string]turnCancel
+}
+
+type turnCancel struct {
+	id     uint64
+	cancel context.CancelFunc
 }
 
 type Options struct {
@@ -87,10 +95,24 @@ func New(opts Options) (*Agent, error) {
 		toolResultCap: opts.ToolResultCap,
 		logger:        opts.Logger,
 		userTurns:     map[string]chan struct{}{},
+		userCancels:   map[string]turnCancel{},
 	}, nil
 }
 
 func (a *Agent) Name() string { return a.name }
+
+func (a *Agent) Cancel(userID string) bool {
+	key := userKey(userID)
+
+	a.cancelMu.Lock()
+	active := a.userCancels[key]
+	a.cancelMu.Unlock()
+	if active.cancel == nil {
+		return false
+	}
+	active.cancel()
+	return true
+}
 
 func turnEvent(start time.Time, agent, userID, model string) TurnEvent {
 	duration := time.Since(start)
