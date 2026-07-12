@@ -1,6 +1,8 @@
 # Releasing
 
-Vikusha releases are tag-driven.
+Vikusha releases are automated with Release Please.
+
+Release Please watches conventional commits on `main`, opens or updates a release PR, maintains `CHANGELOG.md`, and creates a GitHub Release when the release PR is merged.
 
 ## Install the CLI
 
@@ -59,13 +61,49 @@ So `vikusha version` prints the release tag.
 
 ## Cutting a Release
 
-From a clean `main`:
+Use conventional commit messages:
 
 ```bash
-git pull --ff-only origin main
-go test ./...
-git tag v0.0.3
-git push origin v0.0.3
+feat(agent): inject memory into prompts
+fix(cli): handle missing character path
+docs: clarify install instructions
 ```
 
-Pushing the tag runs `.github/workflows/release.yml`, which tests the project, builds release binaries, writes checksums, and creates a GitHub Release.
+Version bumps follow Release Please's conventional-commit rules:
+
+- `fix:` creates a patch release, for example `v0.0.3` -> `v0.0.4`.
+- `feat:` creates a minor release once the project is `v1.0.0` or later.
+- Before `v1.0.0`, `feat:` is configured to create a patch release so early versions stay conservative.
+- Breaking changes create a major release after `v1.0.0`.
+- Before `v1.0.0`, breaking changes create a minor release.
+
+Breaking changes can be written as:
+
+```bash
+feat!: change character config schema
+```
+
+or with a commit footer:
+
+```text
+BREAKING CHANGE: character config schema changed
+```
+
+After commits land on `main`, `.github/workflows/release-please.yml` opens or updates a release PR. Merging that PR:
+
+1. Updates `CHANGELOG.md`.
+2. Creates the release tag.
+3. Creates the GitHub Release.
+4. Builds release binaries.
+5. Uploads binaries and `checksums.txt` to the release.
+
+## Manual Tag Fallback
+
+Manual tags still work:
+
+```bash
+git tag v0.0.4
+git push origin v0.0.4
+```
+
+Pushing a tag runs `.github/workflows/release.yml`, which tests the project, builds release binaries, writes checksums, and uploads assets to the GitHub Release.
