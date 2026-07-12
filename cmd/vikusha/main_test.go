@@ -33,6 +33,89 @@ func TestMissingCommand(t *testing.T) {
 	}
 }
 
+func TestCreateAgent(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	var out, errOut bytes.Buffer
+	err := run([]string{"create", "writer"}, strings.NewReader(""), &out, &errOut)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	characterPath := namedAgentCharacterPath(home, "writer")
+	if !strings.Contains(out.String(), characterPath) {
+		t.Fatalf("expected created path in output, got %q", out.String())
+	}
+	data, err := os.ReadFile(characterPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	content := string(data)
+	for _, want := range []string{
+		"name: writer",
+		"model: gpt-4o-mini",
+		"api_key_env: OPENAI_API_KEY",
+		"tools: []",
+		filepath.ToSlash(filepath.Join(home, ".vikusha", "agents", "writer", "memory")),
+	} {
+		if !strings.Contains(content, want) {
+			t.Fatalf("expected %q in character.yaml:\n%s", want, content)
+		}
+	}
+	for _, dir := range []string{"memory", "workspace"} {
+		if _, err := os.Stat(filepath.Join(home, ".vikusha", "agents", "writer", dir)); err != nil {
+			t.Fatalf("expected %s directory: %v", dir, err)
+		}
+	}
+}
+
+func TestCreateAgentWithProviderOptions(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	var out, errOut bytes.Buffer
+	err := run([]string{"create", "-model", "claude-sonnet-4-6", "-provider", "anthropic", "coach"}, strings.NewReader(""), &out, &errOut)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	data, err := os.ReadFile(namedAgentCharacterPath(home, "coach"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	content := string(data)
+	for _, want := range []string{
+		"model: claude-sonnet-4-6",
+		"name: anthropic",
+		"api_key_env: ANTHROPIC_API_KEY",
+	} {
+		if !strings.Contains(content, want) {
+			t.Fatalf("expected %q in character.yaml:\n%s", want, content)
+		}
+	}
+}
+
+func TestCreateAgentRefusesExistingAgent(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	if _, err := createAgent("writer", createOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := createAgent("writer", createOptions{}); err == nil {
+		t.Fatal("expected existing agent error")
+	}
+}
+
+func TestCreateAgentRejectsInvalidName(t *testing.T) {
+	for _, name := range []string{"", "bad/name", "bad name", "bad.yaml"} {
+		if _, err := createAgent(name, createOptions{}); err == nil {
+			t.Fatalf("expected invalid name error for %q", name)
+		}
+	}
+}
+
 func TestResolveCharacterPathKeepsExplicitPath(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "character.yaml")
 

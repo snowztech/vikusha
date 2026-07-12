@@ -62,7 +62,8 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 
 ### Per-agent workspace
 
-- [ ] Each agent owns `~/.vikusha/agents/<name>/` with its own memory, workspace, and logs.
+- [x] Each agent owns `~/.vikusha/agents/<name>/` with its own character, memory directory, and workspace directory.
+- [ ] Per-agent logs under `~/.vikusha/agents/<name>/logs`.
 - [ ] File tools default-scoped to the agent's workspace.
 - [ ] Paths outside the workspace require explicit approval, persisted per agent.
 - [ ] Path resolution blocks `..` escapes and symlinks pointing outside the workspace.
@@ -96,7 +97,7 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 
 - [x] `vikusha run <char.yaml>`: start an agent.
 - [x] `vikusha start <char.yaml>`: preferred alias for starting an agent.
-- [ ] `vikusha start <agent>`: start a named always-on agent.
+- [x] `vikusha start <agent>`: start a named agent in the terminal.
 - [x] `vikusha chat <char.yaml>`: interactive terminal session.
 - [x] `vikusha version`.
 
@@ -112,8 +113,8 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 
 ### v0.3: scaffolding new agents
 
-- [ ] `vikusha create <name>` scaffolds a new agent from a template.
-- [ ] Created agents are stored under `~/.vikusha/agents/<name>/`.
+- [x] `vikusha create <name>` scaffolds a new agent from the default template.
+- [x] Created agents are stored under `~/.vikusha/agents/<name>/`.
 - [ ] Built-in templates: `personal`, `support`, `dev`.
 - [ ] Generated output: `main.go`, `character.yaml`, `.env.example`, `Makefile`.
 - [ ] `vikusha build <dir>` wraps `go build` so non-Go users get one command.
