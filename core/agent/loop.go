@@ -13,6 +13,12 @@ import (
 // The loop is intentionally small: call the model, run requested tools,
 // feed tool results back, and repeat until the model returns final text.
 func (a *Agent) Chat(ctx context.Context, userID, msg string) (string, error) {
+	release, err := a.acquireUserTurn(ctx, userID)
+	if err != nil {
+		return "", err
+	}
+	defer release()
+
 	system, err := a.systemWithMemory(ctx, userID)
 	if err != nil {
 		return "", err
@@ -48,6 +54,33 @@ func (a *Agent) Chat(ctx context.Context, userID, msg string) (string, error) {
 	}
 
 	return "", fmt.Errorf("agent: hit max iterations (%d)", maxIterations)
+}
+
+func (a *Agent) acquireUserTurn(ctx context.Context, userID string) (func(), error) {
+	key := strings.TrimSpace(userID)
+	if key == "" {
+		key = "default"
+	}
+
+	// Each user gets a one-slot gate so concurrent transports cannot overlap
+	// turns for the same conversation context.
+	a.turnsMu.Lock()
+	if a.userTurns == nil {
+		a.userTurns = map[string]chan struct{}{}
+	}
+	turn := a.userTurns[key]
+	if turn == nil {
+		turn = make(chan struct{}, 1)
+		a.userTurns[key] = turn
+	}
+	a.turnsMu.Unlock()
+
+	select {
+	case turn <- struct{}{}:
+		return func() { <-turn }, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
 }
 
 func (a *Agent) systemWithMemory(ctx context.Context, userID string) (string, error) {
