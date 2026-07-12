@@ -42,7 +42,7 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 - [x] OpenAI-compatible backend (covers OpenAI, Groq, OpenRouter, LM Studio).
 - [ ] Streaming responses for terminal and future TUI use.
 - [x] Retry with exponential backoff on 429 and 5xx, respecting `retry-after`.
-- [ ] Usage accounting split across input, output, cache read, cache write.
+- [x] Usage accounting split across input, output, cache read, cache write where reported by the provider.
 
 ### Context engineering
 

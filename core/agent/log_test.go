@@ -12,16 +12,17 @@ func TestJSONLoggerWritesTurnEvent(t *testing.T) {
 	logger := NewJSONLogger(&buf)
 
 	logger.LogTurn(context.Background(), TurnEvent{
-		Agent:        "writer",
-		UserID:       "lucas",
-		Model:        "test-model",
-		Duration:     "10ms",
-		DurationMS:   10,
-		Iterations:   2,
-		InputTokens:  20,
-		OutputTokens: 5,
-		Tools:        []string{"file_list"},
-		FinishReason: "stop",
+		Agent:           "writer",
+		UserID:          "lucas",
+		Model:           "test-model",
+		Duration:        "10ms",
+		DurationMS:      10,
+		Iterations:      2,
+		InputTokens:     20,
+		OutputTokens:    5,
+		ReasoningTokens: 2,
+		Tools:           []string{"file_list"},
+		FinishReason:    "stop",
 	})
 
 	var got TurnEvent
@@ -33,5 +34,8 @@ func TestJSONLoggerWritesTurnEvent(t *testing.T) {
 	}
 	if got.InputTokens != 20 || got.OutputTokens != 5 {
 		t.Fatalf("tokens = input %d output %d, want 20/5", got.InputTokens, got.OutputTokens)
+	}
+	if got.ReasoningTokens != 2 {
+		t.Fatalf("reasoning tokens = %d, want 2", got.ReasoningTokens)
 	}
 }

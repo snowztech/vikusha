@@ -77,6 +77,7 @@ type TurnEvent struct {
 	OutputTokens     int      `json:"output_tokens,omitempty"`
 	CacheReadTokens  int      `json:"cache_read_tokens,omitempty"`
 	CacheWriteTokens int      `json:"cache_write_tokens,omitempty"`
+	ReasoningTokens  int      `json:"reasoning_tokens,omitempty"`
 	Tools            []string `json:"tools,omitempty"`
 	Error            string   `json:"error,omitempty"`
 	Truncated        bool     `json:"truncated,omitempty"`
@@ -161,4 +162,5 @@ func (e *TurnEvent) addUsage(usage llm.Usage) {
 	e.OutputTokens += usage.OutputTokens
 	e.CacheReadTokens += usage.CacheReadTokens
 	e.CacheWriteTokens += usage.CacheWriteTokens
+	e.ReasoningTokens += usage.ReasoningOutputTokens
 }

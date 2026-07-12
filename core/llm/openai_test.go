@@ -29,7 +29,12 @@ func TestOpenAICompleteRetriesTransientStatus(t *testing.T) {
 					"finish_reason": "stop"
 				}
 			],
-			"usage": {"prompt_tokens": 3, "completion_tokens": 2}
+			"usage": {
+				"prompt_tokens": 3,
+				"completion_tokens": 2,
+				"prompt_tokens_details": {"cached_tokens": 1},
+				"completion_tokens_details": {"reasoning_tokens": 4}
+			}
 		}`)),
 		}, nil
 	})
@@ -53,6 +58,9 @@ func TestOpenAICompleteRetriesTransientStatus(t *testing.T) {
 		t.Fatalf("content = %#v, want ok", resp.Content)
 	}
 	if resp.Usage.InputTokens != 3 || resp.Usage.OutputTokens != 2 {
-		t.Fatalf("usage = %#v, want 3/2", resp.Usage)
+		t.Fatalf("usage = %#v, want input/output 3/2", resp.Usage)
+	}
+	if resp.Usage.CacheReadTokens != 1 || resp.Usage.ReasoningOutputTokens != 4 {
+		t.Fatalf("usage = %#v, want cache read 1 and reasoning 4", resp.Usage)
 	}
 }
