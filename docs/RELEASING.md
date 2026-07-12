@@ -94,16 +94,7 @@ After commits land on `main`, `.github/workflows/release-please.yml` opens or up
 1. Updates `CHANGELOG.md`.
 2. Creates the release tag.
 3. Creates the GitHub Release.
-4. Builds release binaries.
+4. Checks out the release tag and builds release binaries.
 5. Uploads binaries and `checksums.txt` to the release.
 
-## Manual Tag Fallback
-
-Manual tags still work:
-
-```bash
-git tag v0.0.4
-git push origin v0.0.4
-```
-
-Pushing a tag runs `.github/workflows/release.yml`, which tests the project, builds release binaries, writes checksums, and uploads assets to the GitHub Release.
+Manual tags are not the normal release path. Use the Release Please PR so the changelog, manifest, tag, GitHub Release, and binary assets stay in sync.
