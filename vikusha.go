@@ -94,6 +94,7 @@ func buildMemory(c *character.Character) (memory.Memory, error) {
 func registry(names []string, opts Options) (*tool.Registry, error) {
 	reg := tool.NewRegistry()
 	available := map[string]tool.Tool{
+		"file_list": file.NewList(opts.Workspace),
 		"file_read": file.NewRead(opts.Workspace),
 	}
 	for name, t := range opts.Tools {

@@ -162,7 +162,9 @@ provider:
 memory:
   backend: file
   path: %s
-tools: []
+tools:
+  - file_list
+  - file_read
 `, name, model, name, provider, apiKeyEnv, filepath.ToSlash(memoryPath))
 }
 

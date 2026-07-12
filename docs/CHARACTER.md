@@ -45,6 +45,7 @@ memory:
   path: .vikusha/helper/memory
 
 tools:
+  - file_list
   - file_read
 ```
 
@@ -60,7 +61,7 @@ tools:
 
 `memory` is optional. The implemented backend today is `file`, backed by JSONL files at `memory.path`.
 
-`tools` is optional. The implemented built-in tool today is `file_read`.
+`tools` is optional. The implemented built-in tools today are `file_list` and `file_read`.
 
 ## Validation
 
