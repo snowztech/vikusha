@@ -47,6 +47,48 @@ system_prompt: Be useful.
 	}
 }
 
+func TestLoadRejectsUnknownFields(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "character.yaml")
+	if err := os.WriteFile(path, []byte(`
+name: Helper
+model: gpt-4o-mini
+system_prompt: Be useful.
+prompt: typo
+`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := Load(path)
+	if err == nil {
+		t.Fatal("expected unknown field error")
+	}
+	if !strings.Contains(err.Error(), "field prompt not found") {
+		t.Fatalf("expected unknown field in error, got %q", err.Error())
+	}
+}
+
+func TestLoadRejectsUnknownNestedFields(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "character.yaml")
+	if err := os.WriteFile(path, []byte(`
+name: Helper
+model: gpt-4o-mini
+system_prompt: Be useful.
+provider:
+  name: openai
+  token_env: OPENAI_API_KEY
+`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := Load(path)
+	if err == nil {
+		t.Fatal("expected unknown field error")
+	}
+	if !strings.Contains(err.Error(), "field token_env not found") {
+		t.Fatalf("expected unknown nested field in error, got %q", err.Error())
+	}
+}
+
 func TestOpenRouterDefaultAPIKeyEnv(t *testing.T) {
 	c := Character{
 		Name:         "Router",
