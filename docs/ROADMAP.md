@@ -72,7 +72,8 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 
 - [x] Tool interface with a stable JSON schema so definitions cache cleanly.
 - [x] Built-in: `file_read`, `file_list`.
-- [ ] Built-in: `bash`, `file_edit`, `web_search`, `web_fetch`.
+- [ ] Built-in: `bash`, `web_search`, `web_fetch`.
+- [x] Built-in: `file_edit`.
 - [x] Per-tool timeout and result-cap overrides via character YAML.
 - [ ] Danger detection on bash and file writes, with an approval flow.
 
