@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/snowztech/vikusha/core/agent"
 )
 
 func TestVersion(t *testing.T) {
@@ -224,4 +226,117 @@ func TestOpenTurnLogCreatesLogFile(t *testing.T) {
 	if string(data) != "{}\n" {
 		t.Fatalf("log file = %q, want json line", data)
 	}
+}
+
+func TestTurnLoggerUsesCharacterTerminalLogging(t *testing.T) {
+	path := writeCharacterYAML(t, t.TempDir(), `
+name: logger
+model: gpt-4o-mini
+system_prompt: Be useful.
+logging:
+  terminal: true
+  color: true
+`)
+	var stderr bytes.Buffer
+
+	logger, closeLogger, err := turnLogger(path, path, &stderr, logOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer closeLogger()
+
+	logger.LogTurn(nil, agent.TurnEvent{Duration: "1ms", Iterations: 1, FinishReason: "stop"})
+	if !strings.Contains(stderr.String(), "\x1b[32m") {
+		t.Fatalf("stderr = %q, want colored terminal log", stderr.String())
+	}
+}
+
+func TestTurnLoggerNoColorOverridesCharacterColor(t *testing.T) {
+	path := writeCharacterYAML(t, t.TempDir(), `
+name: logger
+model: gpt-4o-mini
+system_prompt: Be useful.
+logging:
+  terminal: true
+  color: true
+`)
+	var stderr bytes.Buffer
+
+	logger, closeLogger, err := turnLogger(path, path, &stderr, logOptions{NoColor: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer closeLogger()
+
+	logger.LogTurn(nil, agent.TurnEvent{Duration: "1ms", Iterations: 1, FinishReason: "stop"})
+	if strings.Contains(stderr.String(), "\x1b[") {
+		t.Fatalf("stderr = %q, want no color escapes", stderr.String())
+	}
+}
+
+func TestTurnLoggerUsesCharacterJSONLoggingForNamedAgent(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	path := namedAgentCharacterPath(home, "logger")
+	writeCharacterYAML(t, filepath.Dir(path), `
+name: logger
+model: gpt-4o-mini
+system_prompt: Be useful.
+logging:
+  json: true
+`)
+	var stderr bytes.Buffer
+
+	logger, closeLogger, err := turnLogger(path, "logger", &stderr, logOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	logger.LogTurn(nil, agent.TurnEvent{Agent: "logger", Duration: "1ms", Iterations: 1, FinishReason: "stop"})
+	closeLogger()
+
+	data, err := os.ReadFile(filepath.Join(filepath.Dir(path), "logs", "turns.jsonl"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), `"agent":"logger"`) {
+		t.Fatalf("log file = %q, want json event", data)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("stderr = %q, want empty", stderr.String())
+	}
+}
+
+func TestTurnLoggerExplicitFlagOverridesCharacterLogging(t *testing.T) {
+	path := writeCharacterYAML(t, t.TempDir(), `
+name: logger
+model: gpt-4o-mini
+system_prompt: Be useful.
+logging:
+  terminal: true
+  color: true
+`)
+	var stderr bytes.Buffer
+
+	logger, closeLogger, err := turnLogger(path, path, &stderr, logOptions{JSON: true, ExplicitLogMode: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer closeLogger()
+
+	logger.LogTurn(nil, agent.TurnEvent{Agent: "logger", Duration: "1ms", Iterations: 1, FinishReason: "stop"})
+	if !strings.Contains(stderr.String(), `"agent":"logger"`) {
+		t.Fatalf("stderr = %q, want json log", stderr.String())
+	}
+}
+
+func writeCharacterYAML(t *testing.T, dir, content string) string {
+	t.Helper()
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(dir, "character.yaml")
+	if err := os.WriteFile(path, []byte(strings.TrimSpace(content)+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return path
 }

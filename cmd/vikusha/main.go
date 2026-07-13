@@ -15,6 +15,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/snowztech/vikusha"
 	"github.com/snowztech/vikusha/core/agent"
+	"github.com/snowztech/vikusha/core/character"
 )
 
 var version = "dev"
@@ -82,22 +83,16 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 		if err != nil {
 			return err
 		}
-		var logger agent.TurnLogger
-		var logFile *os.File
-		if *logJSON {
-			logWriter := stderr
-			if namedAgentInput(input) {
-				logFile, err = openTurnLog(path)
-				if err != nil {
-					return err
-				}
-				defer logFile.Close()
-				logWriter = logFile
-			}
-			logger = agent.NewJSONLogger(logWriter)
-		} else if *logTerminal {
-			logger = agent.NewTerminalLogger(stderr, !*noColor)
+		logger, closeLogger, err := turnLogger(path, input, stderr, logOptions{
+			JSON:            *logJSON,
+			Terminal:        *logTerminal,
+			NoColor:         *noColor,
+			ExplicitLogMode: *logJSON || *logTerminal,
+		})
+		if err != nil {
+			return err
 		}
+		defer closeLogger()
 		a, err := buildAgent(path, logger)
 		if err != nil {
 			return err
@@ -212,6 +207,44 @@ func buildAgent(path string, logger agent.TurnLogger) (*agent.Agent, error) {
 		Workspace: workspaceForCharacter(path),
 		Logger:    logger,
 	})
+}
+
+type logOptions struct {
+	JSON            bool
+	Terminal        bool
+	NoColor         bool
+	ExplicitLogMode bool
+}
+
+func turnLogger(characterPath, input string, stderr io.Writer, opts logOptions) (agent.TurnLogger, func(), error) {
+	closeFn := func() {}
+	if !opts.ExplicitLogMode {
+		c, err := character.Load(characterPath)
+		if err != nil {
+			return nil, closeFn, err
+		}
+		opts.JSON = c.Logging.JSON
+		opts.Terminal = c.Logging.Terminal
+		opts.NoColor = opts.NoColor || !c.Logging.Color
+	}
+
+	switch {
+	case opts.JSON:
+		logWriter := stderr
+		if namedAgentInput(input) {
+			logFile, err := openTurnLog(characterPath)
+			if err != nil {
+				return nil, closeFn, err
+			}
+			closeFn = func() { _ = logFile.Close() }
+			logWriter = logFile
+		}
+		return agent.NewJSONLogger(logWriter), closeFn, nil
+	case opts.Terminal:
+		return agent.NewTerminalLogger(stderr, !opts.NoColor), closeFn, nil
+	default:
+		return nil, closeFn, nil
+	}
 }
 
 func namedAgentInput(input string) bool {

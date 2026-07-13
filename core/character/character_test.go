@@ -167,6 +167,41 @@ tool_config:
 	}
 }
 
+func TestLoadLoggingConfig(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "character.yaml")
+	if err := os.WriteFile(path, []byte(`
+name: Helper
+model: gpt-4o-mini
+system_prompt: Be useful.
+logging:
+  terminal: true
+  color: true
+`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	c, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !c.Logging.Terminal || !c.Logging.Color {
+		t.Fatalf("logging = %#v, want terminal color", c.Logging)
+	}
+}
+
+func TestLoggingValidation(t *testing.T) {
+	c := Character{
+		Name:         "Logging",
+		Model:        "gpt-4o-mini",
+		SystemPrompt: "Be useful.",
+		Logging:      LoggingConfig{JSON: true, Terminal: true},
+	}
+	errs := c.Validate()
+	if len(errs) != 1 || !strings.Contains(errs[0], "logging.json") {
+		t.Fatalf("Validate() = %#v, want logging conflict", errs)
+	}
+}
+
 func TestToolConfigValidation(t *testing.T) {
 	c := Character{
 		Name:         "Tools",
