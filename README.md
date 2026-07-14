@@ -121,6 +121,9 @@ tool_config:
   file_read:
     timeout: 5s
     result_cap: 8000
+logging:
+  terminal: true
+  color: true
 ```
 
 If `provider` is omitted, Vikusha infers Anthropic for models beginning with `claude`; otherwise it uses OpenAI-compatible chat completions. The default env vars are `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, and `GROQ_API_KEY`, depending on the provider.

@@ -19,6 +19,7 @@ type Character struct {
 	Context      ContextConfig         `yaml:"context"`
 	Tools        []string              `yaml:"tools"`
 	ToolConfig   map[string]ToolConfig `yaml:"tool_config"`
+	Logging      LoggingConfig         `yaml:"logging"`
 }
 
 type ProviderConfig struct {
@@ -39,6 +40,12 @@ type ContextConfig struct {
 type ToolConfig struct {
 	Timeout   string `yaml:"timeout"`
 	ResultCap int    `yaml:"result_cap"`
+}
+
+type LoggingConfig struct {
+	JSON     bool `yaml:"json"`
+	Terminal bool `yaml:"terminal"`
+	Color    bool `yaml:"color"`
 }
 
 func Load(path string) (*Character, error) {
@@ -78,6 +85,9 @@ func (c Character) Validate() []string {
 	}
 	if c.Context.HistoryTokenBudget < 0 {
 		errs = append(errs, "context.history_token_budget cannot be negative")
+	}
+	if c.Logging.JSON && c.Logging.Terminal {
+		errs = append(errs, "logging.json and logging.terminal cannot both be true")
 	}
 	for name, cfg := range c.ToolConfig {
 		toolName := strings.TrimSpace(name)

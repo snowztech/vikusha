@@ -56,6 +56,11 @@ tool_config:
   file_read:
     timeout: 5s
     result_cap: 8000
+
+logging:
+  json: false
+  terminal: true
+  color: true
 ```
 
 ## Fields
@@ -75,6 +80,8 @@ tool_config:
 `tools` is optional. The implemented built-in tools today are `file_list`, `file_read`, and `file_edit`.
 
 `tool_config` is optional. It configures enabled tools by name. `timeout` uses Go duration strings such as `5s`, `500ms`, or `1m`. `result_cap` limits how many bytes from that tool result are returned to the model before truncation.
+
+`logging` is optional. `json` writes structured turn logs. `terminal` writes human-readable turn logs. `color` controls ANSI color for terminal logs. `json` and `terminal` cannot both be true.
 
 ## Validation
 

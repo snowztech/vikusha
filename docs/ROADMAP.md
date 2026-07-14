@@ -81,7 +81,7 @@ A single agent you can talk to from the terminal, backed by a core harness that 
 
 - [x] YAML loader with strict validation.
 - [x] Required fields: `name`, `model`, `system_prompt`.
-- [ ] Optional fields: `tools`, `tool_config`, `memory`, `context`, `logging`.
+- [x] Optional fields: `tools`, `tool_config`, `memory`, `context`, `logging`.
 - [x] Validation reports every problem at once, not just the first.
 
 ### Transports
